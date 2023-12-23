@@ -14,6 +14,7 @@ library(tidyverse)
 TMB::compile("Growth_Model.cpp")
 dyn.unload(dynlib("Growth_Model"))
 dyn.load(dynlib('Growth_Model'))
+
 source(here("R", "functions.R"))
 
 dir.out = here("output", "LAA_Models")
@@ -37,7 +38,7 @@ age_bins = sort(unique(age_dat$Tester_Age)) # set up number of age bins
 re_model = c("constant", "3dar1")
 sex_names = unique(age_dat$Sex_name)
 years = sort(unique(age_dat$Year))
-n_retro = 0
+n_retro = 20
 n_proj = 1 # projection years
 
 # Run Models --------------------------------------------------------------
@@ -57,7 +58,8 @@ for(r in 1:length(re_model)) {
       mod_df = age_dat %>% filter(Sex_name == sex_names[s], # filter to sex
                          Year %in% c(0:(length(years)-y-1))) %>%  # peel back years
         mutate(Tester_Age = Tester_Age - min(Tester_Age)) %>% # subtract age for tmb (prob not necessary)
-        select(-Sex_name)
+        select(-Sex_name) %>% 
+        filter(Length >= 41)
       
       # set up model inputs
       model_inputs = prepare_data(data = mod_df, # model dataframe
@@ -69,10 +71,12 @@ for(r in 1:length(re_model)) {
                                   var_param = 0, # variance parameterization for 3dar1
                                   n_proj_years = n_proj) # number of projection years
       
+      if(sex_names[s] == "Male") model_inputs$parameters$ln_X_inf = log(65)
+
       # set up AD object
       model = MakeADFun(data = model_inputs$data, 
                         parameters = model_inputs$parameters, 
-                        DLL = "Growth_Model", random = "ln_eps_at", # specify what to integrate out
+                        DLL = "Growth_Model", random = c("ln_eps_at"), # specify what to integrate out
                         map = model_inputs$map, silent = TRUE)
       
       # optimize

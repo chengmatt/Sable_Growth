@@ -140,7 +140,7 @@ Type objective_function<Type>::operator() ()
   PARAMETER(ln_k); // brody growth coefficient
   PARAMETER(ln_beta); // beta parameter for length-weight stuff (allometric scaling)
   PARAMETER_VECTOR(ln_obs_sigma2); // observation error parameter
-  
+
   // Correlation parameters for AR processes
   PARAMETER(rho_a); // Partial correlation by age
   PARAMETER(rho_y); // Partial correlation by year
@@ -175,14 +175,14 @@ Type objective_function<Type>::operator() ()
     for(int a = 0; a < n_ages; a++){
       for(int y = 0; y < n_years; y++) {
         if(growth_model == 1) {
-          mu_at(a,y) = X_inf - (X_inf-Lmin)*exp(-k*Type(a))  * exp(ln_eps_at(a, y)); // length-at-age (in normal space)
-          obs_sigma_at(a,y) = exp(ln_obs_sigma2(0)) + (((mu_at(a,y) - mu_at(0,y)) / (X_inf - mu_at(0,y))) * 
+          mu_at(a,y) = X_inf * (1 - exp(-k * exp(ln_eps_at(a, y)) * (Type(ages(a)) - ln_Lmin))); // vonB LAA  (Lmin here is t0)
+          obs_sigma_at(a,y) = exp(ln_obs_sigma2(0)) + (((mu_at(a,y) - mu_at(0,y)) / (X_inf - mu_at(0,y))) *
                               (exp(ln_obs_sigma2(1)) - exp(ln_obs_sigma2(0))) ); // linear interpolation for variance
         } // LAA model
         if(growth_model == 2) {
-          mu_at(a,y) = X_inf - (X_inf-Lmin)*exp(-k*Type(a)); // LAA Parametric form
-          mu_at(a,y) = alpha * pow(mu_at(a,y), beta) * exp(ln_eps_at(a, y)); // LW conversion
-        } // wWAAeight model
+          mu_at(a,y) = X_inf - (X_inf-Lmin)*exp(-k* exp(ln_eps_at(a, y))*Type(ages(a))); // LAA Parametric form
+          mu_at(a,y) = alpha * pow(mu_at(a,y), beta); // LW conversion
+        } // Weight model
       } // end y loop
     } // end a loop
   
@@ -193,9 +193,9 @@ Type objective_function<Type>::operator() ()
       int a = CppAD::Integer(obs_mat(i, 2)); // extract observed age index for a given observation
       int y = CppAD::Integer(obs_mat(i, 3)); // extract year index for a given observation
       Type obs_lens = obs_mat(i,0); // get observed lengths
-      Type obs_wts = obs_mat(i,1); // get observed weights 
+      Type obs_wts = obs_mat(i,1); // get observed weights
       // Minimize observation likelihoods
-      if(!isNA(obs_sigma_at(a, y))) jnLL -= dnorm(obs_lens, mu_at(a, y), obs_sigma_at(a, y), true); // minimize for lengths (normal)
+      jnLL -= dnorm(obs_lens, mu_at(a,y), obs_sigma_at(a, y), true); // minimize for lengths (normal)
     } // end i loop
   } // length-at-age model
 

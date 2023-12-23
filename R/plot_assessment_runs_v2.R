@@ -45,9 +45,9 @@ get_osa_res = function(obs, pred, iss, iter_wt, index, drop_bin) {
   require(compResidual)
   # Do some munging
   years = rownames(pred) # get years
-  ess_wt = round(iss * iter_wt, 0) # get ess
-  obs1 = round((obs + 0.001) * (ess_wt)) # calculate observations in numbers
-  pred = pred + 0.001 # add constant so we can divide finite
+  ess_wt = (iss * iter_wt) # get ess
+  obs1 = round((obs) * (ess_wt)) # calculate observations in numbers
+  pred = pred # add constant so we can divide finite
   # determine which bin to drop (software drops last bin automatically)
   obs1 <- cbind(obs1[,-drop_bin], obs1[,drop_bin])
   pred1 <- cbind(pred[,-drop_bin], pred[,drop_bin])
@@ -179,9 +179,9 @@ sq_fish1m = get_osa_res(obs = grwth_sq_sab_curr$oac.fish1.m,
                         index = seq(3,31,1),
                         drop_bin = 1)
 
-sq_fish1m_plot = res_plot(data = sq_fish1m[[1]], 
+(sq_fish1m_plot = res_plot(data = sq_fish1m[[1]], 
                           comp_type = "Age", res_type = "(Growth SQ Fishery LL Age Comps Males)",
-                          ymin = 2)
+                          ymin = 2))
 
 gv_fish1m = get_osa_res(obs = grwth_vary_sab_curr$oac.fish1.m, 
                         pred = grwth_vary_sab_curr$eac.fish1.m, 
@@ -190,13 +190,12 @@ gv_fish1m = get_osa_res(obs = grwth_vary_sab_curr$oac.fish1.m,
                         index = seq(3,31,1),
                         drop_bin = 1)
 
-gv_fish1m_plot = res_plot(data = gv_fish1m[[1]], 
+(gv_fish1m_plot = res_plot(data = gv_fish1m[[1]], 
                           comp_type = "Age", res_type = "(Growth Vary Fishery LL Age Comps Males)",
-                          ymin = 2)
+                          ymin = 2))
 
 pdf(here("figs", "Model Comparison", "FixedGear_Age_Resid.pdf"), width = 15)
-ggpubr::ggarrange(sq_fish1f_plot, gv_fish1f_plot)
-ggpubr::ggarrange(sq_fish1m_plot, gv_fish1m_plot)
+ggpubr::ggarrange(sq_fish1f_plot, gv_fish1f_plot, sq_fish1m_plot, gv_fish1m_plot)
 dev.off()
 
 ### Fits --------------------------------------------------------------------
@@ -1035,7 +1034,7 @@ ssb_df = ssb_df %>% left_join(b40_df %>% rename(b40 = coeff) %>%
   mutate(Bratio = ssb/b40) %>% 
   mutate(Model_Comps = ifelse(str_detect(type, "Partial"), "Partial Length", "Full"))
 
-pdf(here("figs", "Model Comparison", "SSB_Comparison.pdf"), width = 13)
+pdf(here("figs", "Model Comparison", "SSB_Comparison.pdf"))
 ggplot(ssb_df %>% filter(Year <= 2023), 
        aes(x = Year, y = ssb, ymin = downr, ymax = upr, fill = type)) +
   geom_line(aes(color = type), size = 1.5) +
@@ -1048,7 +1047,7 @@ ggplot(ssb_df %>% filter(Year <= 2023),
 dev.off()
 
 # Compare SSB vs B40 ------------------------------------------------------
-pdf(here("figs", "Model Comparison", "Bratio_Comparison.pdf"), width = 13)
+pdf(here("figs", "Model Comparison", "Bratio_Comparison.pdf"))
 ggplot(ssb_df %>% filter(Year >= 1996, Year<= 2023), 
        aes(x = Year, y = Bratio, color = type)) +
   geom_line(size = 1.5, alpha = 0.55) +
@@ -1073,7 +1072,7 @@ rec_df = rec_df %>% left_join(meanrec_df %>% rename(meanrec = coeff) %>% mutate(
                                 select(type, meanrec), by = "type") %>% 
   mutate(Model_Comps = ifelse(str_detect(type, "Partial"), "Partial Length", "Full"))
 
-pdf(here("figs", "Model Comparison", "Recruitment_Comparison.pdf"), width = 13)
+pdf(here("figs", "Model Comparison", "Recruitment_Comparison.pdf"))
 ggplot(rec_df %>% filter(Year != 2023), aes(x = Year - 2, y = rec, ymin = downr, ymax = upr, fill = type)) +
   geom_line(aes(color = type), size = 1.2) +
   geom_ribbon(alpha = 0.4) +
@@ -1111,23 +1110,8 @@ for(i in 1:length(selex_names)) {
 all_sel_df = all_sel_df %>% 
   mutate(sel = factor(sel, labels = sel_rename)) 
 
-pdf(here("figs", "Model Comparison", "Selectivity_Comparison.pdf"),  height = 10, width = 10)
-ggplot(all_sel_df %>% filter(
-  str_detect(sel, "trawl") | 
-    str_detect(sel, "Trawl")),
-  aes(x = Age, y = coeff, ymin = downr, ymax = upr, fill = type)) +
-  geom_line(aes(color = type), size = 1.2, alpha = 0.5) +
-  geom_point(aes(color = type), size = 1.5) +
-  geom_ribbon(alpha = 0.3) +
-  theme_reg() +
-  theme(legend.position = "top") +
-  facet_wrap(~sel) +
-  coord_cartesian(ylim = c(0,1)) +
-  labs(x = "Year", y = "Proportion Selected", color = "Model", fill = "Model")
-
-ggplot(all_sel_df %>% filter(
-  str_detect(sel, "Derby") |
-    str_detect(sel, "Recent")),
+pdf(here("figs", "Model Comparison", "Selectivity_Comparison.pdf"),  height = 12, width = 18)
+ggplot(all_sel_df,
   aes(x = Age, y = coeff, ymin = downr, ymax = upr, fill = type)) +
   geom_line(aes(color = type), size = 1.2, alpha = 0.5) +
   geom_point(aes(color = type), size = 1.5) +
@@ -1147,15 +1131,13 @@ sq_abc <- par_coeff(sq_par, "ABC", type = "Growth SQ")
 abc_df = rbind(gv_abc, sq_abc)
 ref_df = rbind(b40_df, abc_df)
 
-pdf(here("figs", "Model Comparison", "ReferencePoint_Comparison.pdf"), width = 8)
+pdf(here("figs", "Model Comparison", "ReferencePoint_Comparison.pdf"))
 ggplot(ref_df, aes(x = type, y = coeff, ymin = downr, ymax = upr, color = type)) +
-  geom_pointrange() +
-  facet_wrap(~coeff_type, scales = "free") +
-  labs(x = "Model", y = "Value") +
+  geom_pointrange(position = position_dodge(width = 0.2)) +
+  labs(x = "Reference Point", y = "Value", color = "Model") +
   scale_x_discrete(guide = guide_axis(angle = 90)) +
-  theme_reg() +
-  theme(legend.position = "none")
-
+  facet_wrap(~coeff_type, scales = "free") +
+  theme_reg() 
 dev.off()
 # Index Fits --------------------------------------------------------------
 

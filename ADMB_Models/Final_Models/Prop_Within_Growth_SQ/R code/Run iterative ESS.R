@@ -31,7 +31,7 @@ nleng<-length(lengths)
 # Setup directory structure
 ###################################################################################
 
-path<-here("Prop_Within_Growth_SQ")
+path<-here("ADMB_Models", "Final_Models", "Prop_Within_Growth_SQ")
 pathM<-paste(path,sep="")
 pathD<-paste(path,"/Input Files",sep="")
 pathR<-paste(path,"/Results",sep="")

@@ -25,8 +25,8 @@ dir.figs = here("figs", "Growth_Figs")
 dir.create(dir.figs)
 
 # growth estimates here
-laa_ts = read.csv(here("output", "LAA_Models", "Growth_estimates.csv"))
-laa_sd = read.csv(here("output", "LAA_Models", "SDRep_estimates.csv"))
+laa_ts = read.csv(here("output", "LAA_Models", "Growth_estimates.csv")) 
+laa_sd = read.csv(here("output", "LAA_Models", "SDRep_estimates.csv")) 
 waa_ts = read.csv(here("output", "WAA_Models", "Growth_estimates.csv"))
 waa_sd = read.csv(here("output", "WAA_Models", "SDRep_estimates.csv"))
 sd_all = rbind(waa_sd, laa_sd)
@@ -81,6 +81,7 @@ laa_ts %>%
   scale_color_manual(values = c("orange", "black")) +
   scale_fill_manual(values = c("orange", "black")) +
   labs(x = "Year", y = "Length-at-age (Males)", fill = "Model", color = "Model")
+
 dev.off()
 
 # Weight models
@@ -106,8 +107,45 @@ waa_ts %>%
   scale_color_manual(values = c("orange", "black")) +
   scale_fill_manual(values = c("orange", "black")) +
   labs(x = "Year", y = "Weight-at-age (Males)", fill = "Model", color = "Model")
+
 dev.off()
 
+pdf(here(dir.figs, "TS_OnePlot.pdf"), width = 15, height = 13)
+laa_ts %>% 
+  filter(peel == 0, re_model == "3dar1") %>% 
+  ggplot(aes(x = Year, y = Mean, ymin = lwr_95, ymax = upr_95, color = factor(Age))) +
+  geom_line(size = 1) +
+  facet_wrap(~Sex) +
+  theme_trevor_jordan() +
+  labs(x = "Year", y = "Length-at-age", fill = "Age", color = "Age")
+
+waa_ts %>% 
+  filter(peel == 0, re_model == "3dar1") %>% 
+  ggplot(aes(x = Year, y = Mean, ymin = lwr_95, ymax = upr_95, color = factor(Age))) +
+  geom_line(size = 1) +
+  theme_trevor_jordan() +
+  facet_wrap(~Sex) +
+  labs(x = "Year", y = "Weight-at-age", fill = "Model", color = "Model")
+dev.off()
+
+pdf(here(dir.figs, "Grwth_Curve.pdf"), width = 15, height = 13)
+laa_ts %>% 
+  filter(peel == 0, re_model == "3dar1") %>% 
+  ggplot(aes(x = Age, y = Mean, ymin = lwr_95, ymax = upr_95, color = factor(Year))) +
+  geom_line(size = 1) +
+  facet_wrap(~Sex) +
+  theme_trevor_jordan() +
+  labs(x = "Age", y = "Length-at-age", fill = "Age", color = "Age")
+
+waa_ts %>% 
+  filter(peel == 0, re_model == "3dar1") %>% 
+  ggplot(aes(x = Age, y = Mean, ymin = lwr_95, ymax = upr_95, color = factor(Year))) +
+  geom_line(size = 1) +
+  theme_trevor_jordan() +
+  facet_wrap(~Sex) +
+  labs(x = "Age", y = "Weight-at-age", fill = "Model", color = "Model")
+
+dev.off()
 
 # Cohort Plot (most recent year) -------------------------------------------------------------
 
@@ -205,31 +243,6 @@ laa_ts %>% filter(Sex == "female",
 
 dev.off()
 
-# laa retrospectie across time
-pdf(here(dir.figs, "LAA_Year_Retro.pdf"), width = 18, height = 13)
-laa_ts %>% filter(Sex == "female", re_model == "3dar1") %>% 
-  group_by(peel) %>% 
-  filter(Year <= 2023 - peel - 1) %>% 
-  ggplot(aes(x = Year, y = Mean, color = factor(2022 - peel), 
-             fill = factor(2022 - peel)), size = 1.3) +
-  geom_line(size = 1.3, alpha = 1) +
-  facet_wrap(~Age, scale = "free") +
-  labs(x = "Year", y = "Female Length (cm)", fill = "Model Peel", color = "Model Peel") +
-  theme(legend.position = "top") +
-  theme_trevor_jordan()
-
-laa_ts %>% filter(Sex == "Male", re_model == "3dar1") %>% 
-  group_by(peel) %>% 
-  filter(Year <= 2023 - peel - 1) %>% 
-  ggplot(aes(x = Year, y = Mean, color = factor(2022 - peel), 
-             fill = factor(2022 - peel)), size = 1.3) +
-  geom_line(size = 1.3, alpha = 1) +
-  facet_wrap(~Age, scale = "free") +
-  labs(x = "Year", y = "Male Length (cm)", fill = "Model Peel", color = "Model Peel") +
-  theme(legend.position = "top") +
-  theme_trevor_jordan()
-dev.off()
-
 # waa cohort plots
 pdf(here(dir.figs, "WAA_Cohort_Retro.pdf"), width = 18, height = 13)
 waa_ts %>% filter(Sex == "Male",
@@ -255,6 +268,92 @@ waa_ts %>% filter(Sex == "female",
   labs(x = "Age", y = "Female Weight (g)", fill = "Model Peel", color = "Model Peel") +
   theme(legend.position = "top") +
   theme_trevor_jordan() 
+dev.off()
+
+
+# Retrospective across time -----------------------------------------------
+
+# Calculate LAA relative retrospective
+ref_laa_ts = laa_ts %>% filter(re_model == "3dar1", peel == 0) %>% 
+  select(Year, Age, Mean, Sex) %>% rename(Ref = Mean)
+
+retro_laa = laa_ts %>% 
+  left_join(ref_laa_ts, by = c("Age", "Sex", "Year")) %>%
+  distinct() %>% 
+  mutate(Anom = (Mean-Ref) / Ref)
+
+pdf(here(dir.figs, "LAA_Rel_Retro.pdf"), width = 18, height = 13)
+ggplot(retro_laa %>% filter(re_model == "3dar1",
+                            Sex == "female"), 
+       aes(x = Year, y = Anom, color = factor(2022 - peel))) +
+  geom_line(size = 1) +
+  facet_wrap(~Age) +
+  labs(x = "Year", y = "Female Length Retrospective", color = "Model Peel") +
+  theme(legend.position = "top") +
+  theme_trevor_jordan()
+
+ggplot(retro_laa %>% filter(re_model == "3dar1",
+                            Sex == "Male"), 
+       aes(x = Year, y = Anom, color = factor(2022 - peel))) +
+  geom_line(size = 1) +
+  facet_wrap(~Age) +
+  labs(x = "Year", y = "Male Length Retrospective", color = "Model Peel") +
+  theme(legend.position = "top") +
+  theme_trevor_jordan()
+dev.off()
+
+# laa retrospectie across time
+pdf(here(dir.figs, "LAA_Year_Retro.pdf"), width = 18, height = 13)
+laa_ts %>% filter(Sex == "female", re_model == "3dar1") %>% 
+  group_by(peel) %>% 
+  filter(Year <= 2023 - peel - 1) %>% 
+  ggplot(aes(x = Year, y = Mean, color = factor(2022 - peel), 
+             fill = factor(2022 - peel)), size = 1.3) +
+  geom_line(size = 1.3, alpha = 1) +
+  facet_wrap(~Age, scale = "free") +
+  labs(x = "Year", y = "Female Length (cm)", fill = "Model Peel", color = "Model Peel") +
+  theme(legend.position = "top") +
+  theme_trevor_jordan()
+
+laa_ts %>% filter(Sex == "Male", re_model == "3dar1") %>% 
+  group_by(peel) %>% 
+  filter(Year <= 2023 - peel - 1) %>% 
+  ggplot(aes(x = Year, y = Mean, color = factor(2022 - peel), 
+             fill = factor(2022 - peel)), size = 1.3) +
+  geom_line(size = 1.3, alpha = 1) +
+  facet_wrap(~Age, scale = "free") +
+  labs(x = "Year", y = "Male Length (cm)", fill = "Model Peel", color = "Model Peel") +
+  theme(legend.position = "top") +
+  theme_trevor_jordan()
+dev.off()
+
+# Calculate LAA relative retrospective
+ref_waa_ts = waa_ts %>% filter(re_model == "3dar1", peel == 0) %>% 
+  select(Year, Age, Mean, Sex) %>% rename(Ref = Mean)
+
+retro_waa = waa_ts %>% 
+  left_join(ref_waa_ts, by = c("Age", "Sex", "Year")) %>%
+  distinct() %>% 
+  mutate(Anom = (Mean-Ref) / Ref)
+
+pdf(here(dir.figs, "WAA_Rel_Retro.pdf"), width = 18, height = 13)
+ggplot(retro_waa %>% filter(re_model == "3dar1",
+                            Sex == "female"), 
+       aes(x = Year, y = Anom, color = factor(2022 - peel))) +
+  geom_line(size = 1) +
+  facet_wrap(~Age) +
+  labs(x = "Year", y = "Female Weight Retrospective", color = "Model Peel") +
+  theme(legend.position = "top") +
+  theme_trevor_jordan()
+
+ggplot(retro_waa %>% filter(re_model == "3dar1",
+                            Sex == "Male"), 
+       aes(x = Year, y = Anom, color = factor(2022 - peel))) +
+  geom_line(size = 1) +
+  facet_wrap(~Age) +
+  labs(x = "Year", y = "Male Weight Retrospective", color = "Model Peel") +
+  theme(legend.position = "top") +
+  theme_trevor_jordan()
 dev.off()
 
 # waa retrospectie across time
@@ -284,10 +383,10 @@ dev.off()
 
 
 # Retrospective Correlations ----------------------------------------------
-pdf(here(dir.figs, "Correlations_Retro.pdf"))
+pdf(here(dir.figs, "Correlations_Retro.pdf"), width = 15)
 sd_all %>% filter(str_detect(Parameter, "rho"),
                   Growth_model == "weight") %>% 
-ggplot(aes(x = factor(2022 - peel), y = Trans_Estimate, ymin = lwr_95, ymax = upr_95, color = Sex)) +
+  ggplot(aes(x = 2022 - peel, y = Trans_Estimate, ymin = lwr_95, ymax = upr_95, color = Sex)) +
   geom_pointrange() +
   facet_grid(Sex~Parameter) +
   geom_hline(yintercept = 0, lty = 2, size = 1.3) +
@@ -298,7 +397,7 @@ ggplot(aes(x = factor(2022 - peel), y = Trans_Estimate, ymin = lwr_95, ymax = up
   
 sd_all %>% filter(str_detect(Parameter, "rho"),
                   Growth_model == "length") %>% 
-  ggplot(aes(x = factor(2022 - peel), y = Trans_Estimate, ymin = lwr_95, ymax = upr_95, color = Sex)) +
+  ggplot(aes(x = 2022 - peel, y = Trans_Estimate, ymin = lwr_95, ymax = upr_95, color = Sex)) +
   geom_pointrange() +
   facet_grid(Sex~Parameter) +
   geom_hline(yintercept = 0, lty = 2, size = 1.3) +
@@ -385,6 +484,8 @@ for(i in 1:length(length_models)) {
       al_array[,,t] = get_al_trans_matrix(age_bins = 2:31, len_bins = seq(41, 99, 2), 
                                           mean_length = laa_mat[,t], sd = laa_sigma[,t])
     } # end t loop
+    
+    plot(al_array[1,,1])
     
     # naming and mungingz
     al_df = reshape2::melt(al_array)

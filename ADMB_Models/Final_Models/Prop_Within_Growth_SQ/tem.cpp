@@ -926,7 +926,7 @@ model_parameters::model_parameters(int sz,int argc,char * argv[]) :
   #endif
   log_fish1_sel_coffs_m.allocate(1,n_fish_sel_ages,phase_selcoff_fsh1,"log_fish1_sel_coffs_m");
   log_a50_fish1_m.allocate(-1,4,ph_fish_sel,"log_a50_fish1_m");
-  log_delta_fish1_m.allocate(-5,4,ph_fish_sel_delt,"log_delta_fish1_m");
+  log_delta_fish1_m.allocate(-5,4,ph_fish_sel_delt_alt,"log_delta_fish1_m");
   a50_fish1_m.allocate("a50_fish1_m");
   #ifndef NO_AD_INITIALIZE
   a50_fish1_m.initialize();
@@ -2137,7 +2137,7 @@ void model_parameters::Get_Selectivity(void)
   a50_fish5_f=mfexp(log_a50_fish5_f);
   a50_fish5_m=mfexp(log_a50_fish5_m);
   delta_fish1_f=mfexp(log_delta_fish1_f);    // linked because only 5 years length comp data (1990-1995) to est historic sel
-  delta_fish1_m=mfexp(log_delta_fish1_m);    // linked because only 5 years length comp data (1990-1995) to est historic sel
+  delta_fish1_m=mfexp(log_delta_fish1_f);    // linked because only 5 years length comp data (1990-1995) to est historic sel
   delta_fish2=mfexp(log_delta_fish1_f);     // linked because only 5 years length comp data (1990-1995) to est historic sel
   delta_fish3_f=mfexp(log_delta_fish3_f);
   delta_fish3_m=mfexp(log_delta_fish3_m);    // linked bec parameters not well est prob due to limited sex-specific data, does not appear much diff in delta betw sexes so fixed by sex

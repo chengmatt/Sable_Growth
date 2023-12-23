@@ -234,51 +234,51 @@ tem_2023_na_wh.dat
 #wt srv6 size
 0
 #wt rec var penalty
-1
-0.695276989887022 #wt fish1 age comp female iter
-0.63663430048984 #wt fish1 age comp male iter
-3.57340190759015 #wt surv1 age comp female iter
-3.06940268321402 #wt surv1 age comp male iter
-0.647297982931022 #wt surv2 age comp female iter
-0.702221915743478 #wt surv2 age comp male iter
-4.68215967204925 #wt fish1 size comp male iter
-4.93175308496693 #wt fish1 size comp female iter
-0.975394497442046 #wt surv1 size comp male iter
-1.53621894975272 #wt surv1 size comp female iter
-0.806965622758576 #wt surv2 size comp male iter
-0.81420918842539 #wt surv2 size comp female iter
-0.261211365544725 #wt fish 3 size comp male iter
-0.267812089261381 #wt fish 3 size comp female iter
-0.497504321740419 #wt srv7 size comp male iter
-0.696695464143557 #wt srv7 size comp female iter
+1.5
+0.689040191865338 #wt fish1 age comp female iter
+0.627293245724859 #wt fish1 age comp male iter
+3.49796602963389 #wt surv1 age comp female iter
+3.00603118987935 #wt surv1 age comp male iter
+0.722800920487787 #wt surv2 age comp female iter
+0.761911358744703 #wt surv2 age comp male iter
+4.60249728095533 #wt fish1 size comp male iter
+4.94039584538816 #wt fish1 size comp female iter
+1.00061225847903 #wt surv1 size comp male iter
+1.53708333863578 #wt surv1 size comp female iter
+0.828028171393056 #wt surv2 size comp male iter
+0.812322655784683 #wt surv2 size comp female iter
+0.261183683672774 #wt fish 3 size comp male iter
+0.263374301205209 #wt fish 3 size comp female iter
+0.496654345758115 #wt srv7 size comp male iter
+0.683315314975305 #wt srv7 size comp female iter
 #wt sel fish1 regularity (i.e., smoother)
-1
+10
 #wt sel fish2 regularity (i.e., smoother)
-1
+10
 #wt sel fish3 regularity (i.e., smoother)
-1
+10
 #wt sel fish4 regularity (i.e., smoother)
-1
+10
 #wt sel fish1 dome (i.e., prevent strong dome)
-1
+10
 #wt sel fish2 dome (i.e., prevent strong dome)
-1
+10
 #wt sel fish3 dome (i.e., prevent strong dome)
-1
+10
 #wt sel fish4 dome (i.e., prevent strong dome)
-1
+10
 #wt sel surv1 regularity (i.e., smoother)
-1
+10
 #wt sel surv2 regularity (i.e., smoother)
-1
+10
 #wt sel surv1 dome (i.e., prevent strong dome)
-1
+10
 #wt sel surv2 dome (i.e., prevent strong dome)
 0
 #wt F regularity
-1
+0.1
 #wt M regularity
-1
+0.1
 #wt_q_priors
 0
 #wt_M_priors

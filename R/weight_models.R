@@ -27,7 +27,7 @@ re_model = c("constant", "3dar1")
 random_specif = c(NULL, "ln_eps_at")
 sex_names = unique(age_dat$Sex_name)
 years = sort(unique(age_dat$Year))
-n_retro = 0
+n_retro = 20
 n_proj = 1 # projection years
 
 # Run Models --------------------------------------------------------------
@@ -69,6 +69,7 @@ for(r in 1:length(re_model)) {
                                   re_model = re_model[r], # random effects model
                                   var_param = 0, # variance parameterization for 3dar1
                                   n_proj_years = n_proj) # number of projection years
+      if(sex_names[s] == "Male") model_inputs$parameters$ln_X_inf = log(65)
       
       # set up AD object
       model = MakeADFun(data = model_inputs$data, 

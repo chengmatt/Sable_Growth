@@ -8,16 +8,14 @@ library(here)
 library(tidyverse)
 source(here("R", "functions.R"))
 
-dir.figs = here(dir.figs, "Data Exploration")
-dir.out = here(dir.out, "ADMB Inputs")
+dir.figs = here("figs", "Data Exploration")
+dir.out = here("output", "ADMB Inputs")
 dir.create(dir.out)
 dir.create(dir.figs)
 
 # Read in data
-laa_est = read.csv(here("output", "LAA_Models", "Growth_estimates.csv")) 
-laa_sdrep = read.csv(here("output", "LAA_Models", "Growth_estimates.csv")) # Read in length at age input
+laa_est = read.csv(here("output", "LAA_Models", "Growth_estimates.csv"))
 waa_est = read.csv(here("output", "WAA_Models", "Growth_estimates.csv")) 
-waa_sdrep = read.csv(here("output", "WAA_Models", "Growth_estimates.csv")) # Read in weight at age input
 
 # define years to put int constant
 impute_years = 1960:1995 # (fill in with the mean of the time series)
@@ -126,6 +124,8 @@ write.table(t(as.matrix(growth_male_all)[, -1]), here(dir.out, "male_laa_tv.txt"
 # Create AL matrices ------------------------------------------------------
 
 ### Females -------------------------------------------------------------------
+len_bins = seq(41, 99, 2)
+age_bins = 2:31
 # Extract out quantities
 load(here("output", "LAA_Models", paste("length_female_3DAR1_Model.RData", sep = "")))
 laa_sigma = cbind(matrix(rowMeans(model$rep$obs_sigma_at[,-ncol(model$rep$obs_sigma_at)]), ncol = 36, nrow = 30), model$rep$obs_sigma_at)
@@ -143,9 +143,9 @@ for(t in 1:nrow(laa_mat)) { # loop through time to get matrix
   )
 } # end t loop
 
-# colSums(female_al_array[1,,])
-# plot(female_al_array[60,,30])
-# image(t(female_al_array[50,,]))
+colSums(female_al_array[1,,])
+plot(female_al_array[50,,1])
+image(t(female_al_array[64,,]))
 
 write.table(female_al_array, here(dir.out, "female_al_tv.txt"), sep = " ", row.names = FALSE, col.names = FALSE)
 
@@ -167,9 +167,9 @@ for(t in 1:nrow(laa_mat)) { # loop through time to get matrix
   )
 } # end t loop
 
-# colSums(male_al_array[1,,])
-# plot(male_al_array[50,,1])
-# image(t(male_al_array[50,,]))
+colSums(male_al_array[1,,])
+plot(male_al_array[63,,1])
+image(t(male_al_array[61,,]))
 
 write.table(male_al_array, here(dir.out, "male_al_tv.txt"), sep = " ", row.names = FALSE, col.names = FALSE)
 
@@ -252,7 +252,6 @@ all_info_mat <- c(
 )
 
 write.table(all_info_mat, here(dir.out, "fixed_gear_fishages.txt"), sep = " ", col.names = FALSE, row.names = FALSE, quote = FALSE)
-
 # plot comps
 pdf(here(dir.figs, "Fixed_Gear_Comps.pdf"))
 ggplot(fixed_gear_fishages_prop, aes(x = age, y = prop, color = sex)) +

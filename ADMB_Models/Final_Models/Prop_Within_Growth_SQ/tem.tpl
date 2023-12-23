@@ -1179,7 +1179,7 @@ INITIALIZATION_SECTION
 
   init_vector       log_fish1_sel_coffs_m(1,n_fish_sel_ages,phase_selcoff_fsh1); // vector of fishery selectivy log parameters up until they are constant
   init_bounded_number   log_a50_fish1_m(-1,4,ph_fish_sel);                 // age at 50% selection                                                   
-  init_bounded_number   log_delta_fish1_m(-5,4,ph_fish_sel_delt);                 // age between 50% selection and 95% selection....
+  init_bounded_number   log_delta_fish1_m(-5,4,ph_fish_sel_delt_alt);                 // age between 50% selection and 95% selection....
   number          a50_fish1_m;                    // age at 50% selection                                                   
   init_number       d50_fish1_m(phase_dlogist_fsh1);
   number        delta_fish1_m;                    // age between 50% selection and 95% selection....
@@ -1903,7 +1903,7 @@ FUNCTION Get_Selectivity
   a50_fish5_m=mfexp(log_a50_fish5_m);
   
   delta_fish1_f=mfexp(log_delta_fish1_f);    // linked because only 5 years length comp data (1990-1995) to est historic sel
-  delta_fish1_m=mfexp(log_delta_fish1_m);    // linked because only 5 years length comp data (1990-1995) to est historic sel
+  delta_fish1_m=mfexp(log_delta_fish1_f);    // linked because only 5 years length comp data (1990-1995) to est historic sel
   delta_fish2=mfexp(log_delta_fish1_f);     // linked because only 5 years length comp data (1990-1995) to est historic sel
   delta_fish3_f=mfexp(log_delta_fish3_f);
   delta_fish3_m=mfexp(log_delta_fish3_m);    // linked bec parameters not well est prob due to limited sex-specific data, does not appear much diff in delta betw sexes so fixed by sex

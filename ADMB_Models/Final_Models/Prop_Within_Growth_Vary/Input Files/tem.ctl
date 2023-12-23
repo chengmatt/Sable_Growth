@@ -46,7 +46,7 @@ tem_2023_na_wh.dat
 #ph mean recruit
 1
 #ph rec_devs
-3
+2
 #ph steepness
 -6
 #ph R zero
@@ -54,7 +54,7 @@ tem_2023_na_wh.dat
 #ph sigma_R
 -2
 #ph M
-3
+2
 #ph mdelta
 -1
 #ph Mdevs
@@ -64,7 +64,7 @@ tem_2023_na_wh.dat
 #ph ave_F
 2
 #ph Fdevs
-3
+2
 #ph F50
 -6
 #ph fish_sel
@@ -234,7 +234,7 @@ tem_2023_na_wh.dat
 #wt srv6 size
 0
 #wt rec var penalty
-1
+1.5
 0.798377311560415 #wt fish1 age comp female iter
 0.798377311560415 #wt fish1 age comp male iter
 3.73384947313764 #wt surv1 age comp female iter
@@ -252,33 +252,33 @@ tem_2023_na_wh.dat
 0.477018946355492 #wt srv7 size comp male iter
 0.580150903107288 #wt srv7 size comp female iter
 #wt sel fish1 regularity (i.e., smoother)
-1
+10
 #wt sel fish2 regularity (i.e., smoother)
-1
+10
 #wt sel fish3 regularity (i.e., smoother)
-1
+10
 #wt sel fish4 regularity (i.e., smoother)
-1
+10
 #wt sel fish1 dome (i.e., prevent strong dome)
-1
+10
 #wt sel fish2 dome (i.e., prevent strong dome)
-1
+10
 #wt sel fish3 dome (i.e., prevent strong dome)
-1
+10
 #wt sel fish4 dome (i.e., prevent strong dome)
-1
+10
 #wt sel surv1 regularity (i.e., smoother)
-1
+10
 #wt sel surv2 regularity (i.e., smoother)
-1
+10
 #wt sel surv1 dome (i.e., prevent strong dome)
-1
+10
 #wt sel surv2 dome (i.e., prevent strong dome)
 0
 #wt F regularity
-1
+0.1
 #wt M regularity
-1
+0.1
 #wt_q_priors
 0
 #wt_M_priors

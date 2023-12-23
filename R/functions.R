@@ -27,7 +27,7 @@ get_al_trans_matrix = function(age_bins, len_bins, mean_length, sd) {
       }
     }
   }
-  # age_length = prop.table(age_length, margin = 1) # renomalize if they aren't
+  age_length = prop.table(age_length, margin = 1) # renomalize if they aren't already
 
   return(age_length)
 } # end function
@@ -52,16 +52,16 @@ prepare_data = function(data, obs_sd_mat, age_bins, growth_model_name, re_model_
   # Set up parameters
   parameters = list(ln_X_inf = log(80), # asymptotic length or weight
                     ln_Lmin = log(40), # theoretical size at t0
-                    ln_k = log(0.2), # growth rate
+                    ln_k = log(0.25), # growth rate
                     ln_beta = log(3.02), # allometric scaling
                     ln_obs_sigma2 = rep(log(4), 2), # variance for observations
-                    ln_alpha = log(1e-5),
+                    ln_alpha = log(5e-6),
                     rho_a = 0, # correlation by age
                     rho_y = 0, # correlation by year
                     rho_c = 0, # correlation by cohort
                     ln_eps_at = array(data = 0, dim = c(length(unique(age_bins)), # process errors
                                                         length(unique(years)) + n_proj_years ) ),
-                    ln_eps_sigma2 = log(1)) # variance of process errors
+                    ln_eps_sigma2 = log(0.01)) # variance of process errors
   
   # set up data
   data_list = list(obs_mat = as.matrix(data),
@@ -77,6 +77,7 @@ prepare_data = function(data, obs_sd_mat, age_bins, growth_model_name, re_model_
   
   if(growth_model_name == "length") {
     map$ln_alpha = factor(NA)
+    parameters$ln_Lmin = -6 # t0
   } # length models
   
   if(growth_model_name == "weight") {
