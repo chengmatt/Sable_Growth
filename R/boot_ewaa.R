@@ -63,9 +63,10 @@ boot_all = foreach(iter = 1:iters, .packages = c("TMB", "here", "tidyverse"),
                    .options.snow = opts) %dopar% {
 # for(iter in 1:iters) {
   resamp_all = data.frame()
-  for(y in 1:length(years)) { # 1st stage resampling stations
+  for(y in 1:length(years)) { # resample specimens
     yrhaul_df = mod_df %>% filter(Year == years[y]) %>% select(Haul) %>% distinct()
-    boot_hauls = sample(yrhaul_df$Haul, length(yrhaul_df$Haul), replace = TRUE)
+    # boot_hauls = sample(yrhaul_df$Haul, length(yrhaul_df$Haul), replace = TRUE)
+    boot_hauls = yrhaul_df$Haul # specify hauls to saple from
     for(b in 1:length(boot_hauls)) { # second stage resampling specimens
       yrspec_haul_df =  mod_df %>% filter(Year == years[y], Haul == boot_hauls[b])
       resamp = sample_n(yrspec_haul_df, nrow(yrspec_haul_df), replace = TRUE)
@@ -73,7 +74,7 @@ boot_all = foreach(iter = 1:iters, .packages = c("TMB", "here", "tidyverse"),
         read_age = resamp[a,]$Read_Age # get reader age
         prob_tester_ages = ageage_mat[,read_age-1] # get probabilities from tester ages
         resamp[a,]$Tester_Age = sample(age_bins, 1, prob = prob_tester_ages)
-      } # end age-ing error loop
+      } # end ageing error loop
       resamp_all = rbind(resamp_all, resamp)
     } # end b
   } # end y

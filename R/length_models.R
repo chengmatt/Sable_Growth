@@ -38,7 +38,7 @@ age_bins = sort(unique(age_dat$Tester_Age)) # set up number of age bins
 re_model = c("constant", "3dar1")
 sex_names = unique(age_dat$Sex_name)
 years = sort(unique(age_dat$Year))
-n_retro = 20
+n_retro = 15
 n_proj = 1 # projection years
 
 # Run Models --------------------------------------------------------------
@@ -145,7 +145,7 @@ for(r in 1:length(re_model)) {
                Growth_Model = "length", Sex = sex_names[s],
                re_model = re_model[r], # name model elements
                lwr_95 = Mean - 1.96*SD,
-               upr_95 = Mean + 1.96*SD)
+               upr_95 = Mean + 1.96*SD) 
       
       growth_all = rbind(growth_all, growth_df)
       sd_rep_all = rbind(sd_rep_summary, sd_rep_all)

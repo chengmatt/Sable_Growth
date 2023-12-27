@@ -175,13 +175,15 @@ Type objective_function<Type>::operator() ()
     for(int a = 0; a < n_ages; a++){
       for(int y = 0; y < n_years; y++) {
         if(growth_model == 1) {
-          mu_at(a,y) = X_inf * (1 - exp(-k * exp(ln_eps_at(a, y)) * (Type(ages(a)) - ln_Lmin))); // vonB LAA  (Lmin here is t0)
+          mu_at(a,y) = X_inf - (X_inf-Lmin)*exp(-k*Type(ages(a))); // vonB LAA  (Lmin here is t0)
+          mu_at(a,y) *= exp(ln_eps_at(a, y)); // add devs
           obs_sigma_at(a,y) = exp(ln_obs_sigma2(0)) + (((mu_at(a,y) - mu_at(0,y)) / (X_inf - mu_at(0,y))) *
                               (exp(ln_obs_sigma2(1)) - exp(ln_obs_sigma2(0))) ); // linear interpolation for variance
         } // LAA model
         if(growth_model == 2) {
-          mu_at(a,y) = X_inf - (X_inf-Lmin)*exp(-k* exp(ln_eps_at(a, y))*Type(ages(a))); // LAA Parametric form
+          mu_at(a,y) = X_inf - (X_inf-Lmin)*exp(-k*Type(ages(a))); // LAA Parametric form
           mu_at(a,y) = alpha * pow(mu_at(a,y), beta); // LW conversion
+          mu_at(a,y) *= exp(ln_eps_at(a, y)); // add devs
         } // Weight model
       } // end y loop
     } // end a loop

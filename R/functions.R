@@ -50,8 +50,8 @@ prepare_data = function(data, obs_sd_mat, age_bins, growth_model_name, re_model_
                                     "year" = seq_len(length(unique(years)) + n_proj_years ) ))
   
   # Set up parameters
-  parameters = list(ln_X_inf = log(80), # asymptotic length or weight
-                    ln_Lmin = log(40), # theoretical size at t0
+  parameters = list(ln_X_inf = log(75), # asymptotic length or weight
+                    ln_Lmin = log(30), # theoretical size at t0
                     ln_k = log(0.25), # growth rate
                     ln_beta = log(3.02), # allometric scaling
                     ln_obs_sigma2 = rep(log(4), 2), # variance for observations
@@ -77,7 +77,7 @@ prepare_data = function(data, obs_sd_mat, age_bins, growth_model_name, re_model_
   
   if(growth_model_name == "length") {
     map$ln_alpha = factor(NA)
-    parameters$ln_Lmin = -6 # t0
+    # parameters$ln_Lmin = -6 # t0
   } # length models
   
   if(growth_model_name == "weight") {

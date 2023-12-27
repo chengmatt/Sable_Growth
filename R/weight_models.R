@@ -27,7 +27,7 @@ re_model = c("constant", "3dar1")
 random_specif = c(NULL, "ln_eps_at")
 sex_names = unique(age_dat$Sex_name)
 years = sort(unique(age_dat$Year))
-n_retro = 20
+n_retro = 15
 n_proj = 1 # projection years
 
 # Run Models --------------------------------------------------------------
@@ -46,8 +46,8 @@ for(r in 1:length(re_model)) {
       # munging for observed standard deviation dataframe
       log_sd = age_dat %>% filter(Sex_name == sex_names[s],
                                   Year %in% c(0:(length(years) - y - 1))) %>% # peel back years
-        select(Year, Tester_Age, log_sd) %>%
-        pivot_wider(names_from = "Year", values_from = "log_sd") # pivot wider to matrix format
+        select(Year, Tester_Age, sd) %>%
+        pivot_wider(names_from = "Year", values_from = "sd") # pivot wider to matrix format
       log_sd = cbind(log_sd[, as.character(c(0:(length(years) - y - 1)))], 
                      setNames(data.frame(NA), length(years) - y + n_proj - 1)) # filter to sort columns in order, and add NA for projection
       log_sd[log_sd == 0] = NA # if sd = 0, just replace with NA
