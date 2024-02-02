@@ -1179,7 +1179,7 @@ INITIALIZATION_SECTION
 
   init_vector       log_fish1_sel_coffs_m(1,n_fish_sel_ages,phase_selcoff_fsh1); // vector of fishery selectivy log parameters up until they are constant
   init_bounded_number   log_a50_fish1_m(-1,4,ph_fish_sel);                 // age at 50% selection                                                   
-  init_bounded_number   log_delta_fish1_m(-5,4,ph_fish_sel_delt_alt);                 // age between 50% selection and 95% selection....
+  init_bounded_number   log_delta_fish1_m(-5,4,ph_fish_sel);                 // age between 50% selection and 95% selection....
   number          a50_fish1_m;                    // age at 50% selection                                                   
   init_number       d50_fish1_m(phase_dlogist_fsh1);
   number        delta_fish1_m;                    // age between 50% selection and 95% selection....
@@ -1557,7 +1557,7 @@ INITIALIZATION_SECTION
   number        FABC;
   number        FOFL2;
   number        FABC2; 
-
+  sdreport_vector b40rat(styr,endyr); 
 
   3darray size_age_f(styr,endyr,1,nages,1,nlenbins)
   3darray size_age_m(styr,endyr,1,nages,1,nlenbins)
@@ -1899,7 +1899,7 @@ FUNCTION Get_Selectivity
   a50_fish5_m=mfexp(log_a50_fish5_m);
   
   delta_fish1_f=mfexp(log_delta_fish1_f);    // linked because only 5 years length comp data (1990-1995) to est historic sel
-  delta_fish1_m=mfexp(log_delta_fish1_f);    // linked because only 5 years length comp data (1990-1995) to est historic sel
+  delta_fish1_m=mfexp(log_delta_fish1_m);    // linked because only 5 years length comp data (1990-1995) to est historic sel
   delta_fish2=mfexp(log_delta_fish1_f);     // linked because only 5 years length comp data (1990-1995) to est historic sel
   delta_fish3_f=mfexp(log_delta_fish3_f);
   delta_fish3_m=mfexp(log_delta_fish3_f);    // linked bec parameters not well est prob due to limited sex-specific data, does not appear much diff in delta betw sexes so fixed by sex
@@ -2492,19 +2492,19 @@ FUNCTION Get_Numbers_At_Age
       itmp = styr+1-j;
      if(sigma_R_early_switch==1 && itmp<sigma_R_early_end)
       {
-       natage_f(styr,j) =( mfexp(log_mean_rec  - (M(styr,j)) * double(j-1)+ log_rec_dev(itmp)-b(itmp)*sigma_R_early*sigma_R_early/2))/2; 
-       natage_m(styr,j) = (mfexp(log_mean_rec  - (M(styr,j)+mdelta) * double(j-1)+ log_rec_dev(itmp)-b(itmp)*sigma_R_early*sigma_R_early/2))/2;      
+       natage_f(styr,j) =( mfexp(log_mean_rec  - (M(styr,j)+hist_hal_F*fish1_sel_f(j)) * double(j-1)+ log_rec_dev(itmp)-b(itmp)*sigma_R_early*sigma_R_early/2))/2; 
+       natage_m(styr,j) = (mfexp(log_mean_rec  - (M(styr,j)+mdelta+hist_hal_F*fish1_sel_m(j)) * double(j-1)+ log_rec_dev(itmp)-b(itmp)*sigma_R_early*sigma_R_early/2))/2;      
       }
      else
       {
-       natage_f(styr,j) =( mfexp(log_mean_rec  - (M(styr,j)) * double(j-1)+ log_rec_dev(itmp)-b(itmp)*sigr*sigr/2))/2; 
-       natage_m(styr,j) = (mfexp(log_mean_rec  - (M(styr,j)+mdelta) * double(j-1)+ log_rec_dev(itmp)-b(itmp)*sigr*sigr/2))/2; 
+       natage_f(styr,j) =( mfexp(log_mean_rec  - (M(styr,j)+hist_hal_F*fish1_sel_f(j)) * double(j-1)+ log_rec_dev(itmp)-b(itmp)*sigr*sigr/2))/2; 
+       natage_m(styr,j) = (mfexp(log_mean_rec  - (M(styr,j)+mdelta+hist_hal_F*fish1_sel_m(j)) * double(j-1)+ log_rec_dev(itmp)-b(itmp)*sigr*sigr/2))/2; 
      }
      }
      
     // ########## calc for plus group
-      natage_f(styr,nages)      = (mfexp(log_mean_rec - (M(styr,nages-1)) * (nages-1))/ (1. - exp(-(M(styr,nages-1)))))/2;
-      natage_m(styr,nages)      = (mfexp(log_mean_rec - (M(styr,nages-1)+mdelta) * (nages-1))/ (1. - exp(-(M(styr,nages-1)+mdelta))))/2;
+      natage_f(styr,nages)      = (mfexp(log_mean_rec - (M(styr,nages-1)+hist_hal_F*fish1_sel_f(nages-1)) * (nages-1))/ (1. - exp(-(M(styr,nages-1)+hist_hal_F*fish1_sel_f(nages-1)))))/2;
+      natage_m(styr,nages)      = (mfexp(log_mean_rec - (M(styr,nages-1)+mdelta+hist_hal_F*fish1_sel_m(nages-1)) * (nages-1))/ (1. - exp(-(M(styr,nages-1)+mdelta+hist_hal_F*fish1_sel_m(nages-1)))))/2;
      }
     break;
    }
@@ -2922,25 +2922,25 @@ FUNCTION compute_spr_rates
     for (j=1;j<=nages;j++)
      {
       // Kill them off till (spawn_fract)
-       SB0    += Nspr(1,j)*weight_maturity_prod_f(endyr,j)*mfexp(-spawn_fract*natmort);
+       SB0    += Nspr(1,j)*((weight_maturity_prod_f(endyr,j) + weight_maturity_prod_f(endyr-1,j) + weight_maturity_prod_f(endyr-2,j) + weight_maturity_prod_f(endyr-3,j) + weight_maturity_prod_f(endyr-4,j)))/5 *mfexp(-spawn_fract*natmort);
        
       if((ph_ifq>0) && (ph_ifq_block2<1))  // post-IFQ sel does not  includes a recent time block
        {
-        SBF50  += Nspr(2,j)*weight_maturity_prod_f(endyr,j)*mfexp(-spawn_fract*(natmort+fratio*mF50*fish4_sel_f(j)+(1-fratio)*mF50*fish3_sel_f(j)));
-        SBF40  += Nspr(3,j)*weight_maturity_prod_f(endyr,j)*mfexp(-spawn_fract*(natmort+fratio*mF40*fish4_sel_f(j)+(1-fratio)*mF40*fish3_sel_f(j)));
-        SBF35  += Nspr(4,j)*weight_maturity_prod_f(endyr,j)*mfexp(-spawn_fract*(natmort+fratio*mF35*fish4_sel_f(j)+(1-fratio)*mF35*fish3_sel_f(j)));
+        SBF50  += Nspr(2,j)*((weight_maturity_prod_f(endyr,j) + weight_maturity_prod_f(endyr-1,j) + weight_maturity_prod_f(endyr-2,j) + weight_maturity_prod_f(endyr-3,j) + weight_maturity_prod_f(endyr-4,j)))/5*mfexp(-spawn_fract*(natmort+fratio*mF50*fish4_sel_f(j)+(1-fratio)*mF50*fish3_sel_f(j)));
+        SBF40  += Nspr(3,j)*((weight_maturity_prod_f(endyr,j) + weight_maturity_prod_f(endyr-1,j) + weight_maturity_prod_f(endyr-2,j) + weight_maturity_prod_f(endyr-3,j) + weight_maturity_prod_f(endyr-4,j)))/5*mfexp(-spawn_fract*(natmort+fratio*mF40*fish4_sel_f(j)+(1-fratio)*mF40*fish3_sel_f(j)));
+        SBF35  += Nspr(4,j)*((weight_maturity_prod_f(endyr,j) + weight_maturity_prod_f(endyr-1,j) + weight_maturity_prod_f(endyr-2,j) + weight_maturity_prod_f(endyr-3,j) + weight_maturity_prod_f(endyr-4,j)))/5*mfexp(-spawn_fract*(natmort+fratio*mF35*fish4_sel_f(j)+(1-fratio)*mF35*fish3_sel_f(j)));
        }
       if((ph_ifq>0) && (ph_ifq_block2>0)) // post-IFQ sel includes a recent time block
        {
-        SBF50  += Nspr(2,j)*weight_maturity_prod_f(endyr,j)*mfexp(-spawn_fract*(natmort+fratio*mF50*fish5_sel_f(j)+(1-fratio)*mF50*fish3_sel_f(j)));
-        SBF40  += Nspr(3,j)*weight_maturity_prod_f(endyr,j)*mfexp(-spawn_fract*(natmort+fratio*mF40*fish5_sel_f(j)+(1-fratio)*mF40*fish3_sel_f(j)));
-        SBF35  += Nspr(4,j)*weight_maturity_prod_f(endyr,j)*mfexp(-spawn_fract*(natmort+fratio*mF35*fish5_sel_f(j)+(1-fratio)*mF35*fish3_sel_f(j)));
+        SBF50  += Nspr(2,j)*((weight_maturity_prod_f(endyr,j) + weight_maturity_prod_f(endyr-1,j) + weight_maturity_prod_f(endyr-2,j) + weight_maturity_prod_f(endyr-3,j) + weight_maturity_prod_f(endyr-4,j)))/5*mfexp(-spawn_fract*(natmort+fratio*mF50*fish5_sel_f(j)+(1-fratio)*mF50*fish3_sel_f(j)));
+        SBF40  += Nspr(3,j)*((weight_maturity_prod_f(endyr,j) + weight_maturity_prod_f(endyr-1,j) + weight_maturity_prod_f(endyr-2,j) + weight_maturity_prod_f(endyr-3,j) + weight_maturity_prod_f(endyr-4,j)))/5*mfexp(-spawn_fract*(natmort+fratio*mF40*fish5_sel_f(j)+(1-fratio)*mF40*fish3_sel_f(j)));
+        SBF35  += Nspr(4,j)*((weight_maturity_prod_f(endyr,j) + weight_maturity_prod_f(endyr-1,j) + weight_maturity_prod_f(endyr-2,j) + weight_maturity_prod_f(endyr-3,j) + weight_maturity_prod_f(endyr-4,j)))/5*mfexp(-spawn_fract*(natmort+fratio*mF35*fish5_sel_f(j)+(1-fratio)*mF35*fish3_sel_f(j)));
        }
       if(ph_ifq<1) // no post-IFQ sel est
        {
-        SBF50  += Nspr(2,j)*weight_maturity_prod_f(endyr,j)*mfexp(-spawn_fract*(natmort+fratio*mF50*fish1_sel_f(j)+(1-fratio)*mF50*fish3_sel_f(j)));
-        SBF40  += Nspr(3,j)*weight_maturity_prod_f(endyr,j)*mfexp(-spawn_fract*(natmort+fratio*mF40*fish1_sel_f(j)+(1-fratio)*mF40*fish3_sel_f(j)));
-        SBF35  += Nspr(4,j)*weight_maturity_prod_f(endyr,j)*mfexp(-spawn_fract*(natmort+fratio*mF35*fish1_sel_f(j)+(1-fratio)*mF35*fish3_sel_f(j)));
+        SBF50  += Nspr(2,j)*((weight_maturity_prod_f(endyr,j) + weight_maturity_prod_f(endyr-1,j) + weight_maturity_prod_f(endyr-2,j) + weight_maturity_prod_f(endyr-3,j) + weight_maturity_prod_f(endyr-4,j)))/5*mfexp(-spawn_fract*(natmort+fratio*mF50*fish1_sel_f(j)+(1-fratio)*mF50*fish3_sel_f(j)));
+        SBF40  += Nspr(3,j)*((weight_maturity_prod_f(endyr,j) + weight_maturity_prod_f(endyr-1,j) + weight_maturity_prod_f(endyr-2,j) + weight_maturity_prod_f(endyr-3,j) + weight_maturity_prod_f(endyr-4,j)))/5*mfexp(-spawn_fract*(natmort+fratio*mF40*fish1_sel_f(j)+(1-fratio)*mF40*fish3_sel_f(j)));
+        SBF35  += Nspr(4,j)*((weight_maturity_prod_f(endyr,j) + weight_maturity_prod_f(endyr-1,j) + weight_maturity_prod_f(endyr-2,j) + weight_maturity_prod_f(endyr-3,j) + weight_maturity_prod_f(endyr-4,j)))/5*mfexp(-spawn_fract*(natmort+fratio*mF35*fish1_sel_f(j)+(1-fratio)*mF35*fish3_sel_f(j)));
        }
       }  // end NAGES loop
    
@@ -2948,6 +2948,7 @@ FUNCTION compute_spr_rates
   sprpen   += 100.*square(SBF40/SB0-0.4);
   sprpen   += 100.*square(SBF35/SB0-0.35);
   B40       = 0.5*SBF40*mean(pred_rec(1979,endyr-recage));
+  b40rat = spawn_biom / B40;
   
 FUNCTION Calc_priors
 

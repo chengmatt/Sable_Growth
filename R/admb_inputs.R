@@ -129,7 +129,7 @@ age_bins = 2:31
 # Extract out quantities
 load(here("output", "LAA_Models", paste("length_female_3DAR1_Model.RData", sep = "")))
 laa_sigma = cbind(matrix(rowMeans(model$rep$obs_sigma_at[,-ncol(model$rep$obs_sigma_at)]), ncol = 36, nrow = 30), model$rep$obs_sigma_at)
-image(laa_sigma)
+# image(laa_sigma)
 laa_mat = t(as.matrix(growth_female_all)[, -1]) # female LAA
 
 # Set up array
@@ -143,8 +143,8 @@ for(t in 1:nrow(laa_mat)) { # loop through time to get matrix
   )
 } # end t loop
 
-colSums(female_al_array[1,,])
-plot(female_al_array[50,,1])
+colSums(female_al_array[1,,], na.rm = T)
+plot(female_al_array[60,,2], type = "l")
 image(t(female_al_array[64,,]))
 
 write.table(female_al_array, here(dir.out, "female_al_tv.txt"), sep = " ", row.names = FALSE, col.names = FALSE)
@@ -168,7 +168,7 @@ for(t in 1:nrow(laa_mat)) { # loop through time to get matrix
 } # end t loop
 
 colSums(male_al_array[1,,])
-plot(male_al_array[63,,1])
+plot(male_al_array[60,,1])
 image(t(male_al_array[61,,]))
 
 write.table(male_al_array, here(dir.out, "male_al_tv.txt"), sep = " ", row.names = FALSE, col.names = FALSE)

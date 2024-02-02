@@ -46,7 +46,7 @@ tem_2023_na_wh.dat
 #ph mean recruit
 1
 #ph rec_devs
-3
+2
 #ph steepness
 -6
 #ph R zero
@@ -54,7 +54,7 @@ tem_2023_na_wh.dat
 #ph sigma_R
 -2
 #ph M
-3
+2
 #ph mdelta
 -1
 #ph Mdevs
@@ -64,7 +64,7 @@ tem_2023_na_wh.dat
 #ph ave_F
 2
 #ph Fdevs
-3
+2
 #ph F50
 -6
 #ph fish_sel
@@ -235,22 +235,22 @@ tem_2023_na_wh.dat
 0
 #wt rec var penalty
 1.5
-0.689040191865338 #wt fish1 age comp female iter
-0.627293245724859 #wt fish1 age comp male iter
-3.49796602963389 #wt surv1 age comp female iter
-3.00603118987935 #wt surv1 age comp male iter
-0.722800920487787 #wt surv2 age comp female iter
-0.761911358744703 #wt surv2 age comp male iter
-4.60249728095533 #wt fish1 size comp male iter
-4.94039584538816 #wt fish1 size comp female iter
-1.00061225847903 #wt surv1 size comp male iter
-1.53708333863578 #wt surv1 size comp female iter
-0.828028171393056 #wt surv2 size comp male iter
-0.812322655784683 #wt surv2 size comp female iter
-0.261183683672774 #wt fish 3 size comp male iter
-0.263374301205209 #wt fish 3 size comp female iter
-0.496654345758115 #wt srv7 size comp male iter
-0.683315314975305 #wt srv7 size comp female iter
+0.675897540294929 #wt fish1 age comp female iter
+0.570433134956616 #wt fish1 age comp male iter
+3.04007761993277 #wt surv1 age comp female iter
+2.78581871540822 #wt surv1 age comp male iter
+0.613324717303784 #wt surv2 age comp female iter
+0.660186904066513 #wt surv2 age comp male iter
+7.01741715169091 #wt fish1 size comp male iter
+23.4150773140487 #wt fish1 size comp female iter
+2.64185864262761 #wt surv1 size comp male iter
+4.62672015768071 #wt surv1 size comp female iter
+1.08311662063888 #wt surv2 size comp male iter
+1.39792519345611 #wt surv2 size comp female iter
+0.159413163405756 #wt fish 3 size comp male iter
+0.219751863510875 #wt fish 3 size comp female iter
+0.491898311072983 #wt srv7 size comp male iter
+0.629290034563008 #wt srv7 size comp female iter
 #wt sel fish1 regularity (i.e., smoother)
 10
 #wt sel fish2 regularity (i.e., smoother)

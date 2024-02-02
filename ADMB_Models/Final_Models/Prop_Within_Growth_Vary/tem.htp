@@ -762,6 +762,7 @@ private:
   param_number FABC;
   param_number FOFL2;
   param_number FABC2;
+  param_stddev_vector b40rat;
   param_3array size_age_f;
   param_3array size_age_m;
   param_matrix weight_f;

@@ -24,7 +24,7 @@ SA_prev_YR<-2022 #### enter terminal year for previous stock assessment model
 
 dir_R<-here()
 # setwd('Prop_Within_Growth_SQ')
-dir_master<-here("Prop_Within_Growth_Vary")
+dir_master<-here("/Users/matthewcheng/Desktop/Side projects/Sable_Growth/ADMB_Models/Final_Models/Prop_Within_Growth_Vary")
 dir_results<-paste0(dir_master,"//Results",sep='')
 dir.create(dir_results)
 
@@ -55,7 +55,7 @@ theme_reg = function() {
 # Likelihood component names
 like_names<-c("LL Fish Age","LL Srv Age", "LL Fish Size_F","LL Fish Size_M","TRWL Fish Size_F","TRWL Fish Size_M",
               "LL Srv Size_F","LL Srv Size_M","Coop Srv Size_F","Coop Srv Size_M", "TRWL Srv Size_F","TRWL Srv Size_M",
-              "LL Srv RPN","Coop Srv RPN","LL CPUE RPN", "JPN CPUE RPN", "Trawl Survey RPW","Catch",
+              "LL Srv RPW","Coop Srv RPN","LL CPUE RPN", "JPN CPUE RPN", "Trawl Survey RPW","Catch",
               "Recruit_Pen","F_Pen","M_Prior")     
 
 likecomps = sab_curr$likecomp # extract out likelihood components

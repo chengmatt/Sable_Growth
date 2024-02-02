@@ -1179,7 +1179,7 @@ INITIALIZATION_SECTION
 
   init_vector       log_fish1_sel_coffs_m(1,n_fish_sel_ages,phase_selcoff_fsh1); // vector of fishery selectivy log parameters up until they are constant
   init_bounded_number   log_a50_fish1_m(-1,4,ph_fish_sel);                 // age at 50% selection                                                   
-  init_bounded_number   log_delta_fish1_m(-5,4,ph_fish_sel_delt_alt);                 // age between 50% selection and 95% selection....
+  init_bounded_number   log_delta_fish1_m(-5,4,ph_fish_sel);                 // age between 50% selection and 95% selection....
   number          a50_fish1_m;                    // age at 50% selection                                                   
   init_number       d50_fish1_m(phase_dlogist_fsh1);
   number        delta_fish1_m;                    // age between 50% selection and 95% selection....
@@ -1211,7 +1211,7 @@ INITIALIZATION_SECTION
 
   init_vector       log_fish3_sel_coffs_m(1,n_fish_sel_ages,phase_selcoff_fsh3); // vector of fishery selectivy log parameters up until they are constant
   init_bounded_number   log_a50_fish3_m(-1,4,ph_fish_sel);                 // age at 50% selection                                                   
-  init_bounded_number   log_delta_fish3_m(-5,5,ph_fish_sel_delt);                 // age between 50% selection and 95% selection....
+  init_bounded_number   log_delta_fish3_m(-5,5,ph_fish_sel_delt_alt);                 // age between 50% selection and 95% selection....
   number          a50_fish3_m;                    // age at 50% selection                                                   
   init_number       d50_fish3_m(-1);
   number        delta_fish3_m;                    // age between 50% selection and 95% selection....
@@ -1557,7 +1557,7 @@ INITIALIZATION_SECTION
   number        FABC;
   number        FOFL2;
   number        FABC2; 
-
+  sdreport_vector b40rat(styr,endyr); 
 
   3darray size_age_f(styr,endyr,1,nages,1,nlenbins)
   3darray size_age_m(styr,endyr,1,nages,1,nlenbins)
@@ -1685,7 +1685,6 @@ FUNCTION Get_Biologicals
   sigr=mfexp(log_sigr);
 
  //allow for multiple growth blocks
- //allow for multiple growth blocks
  if(growth_model_switch == 0) {
   for (i=styr;i<=endyr;i++)
   {
@@ -1726,20 +1725,15 @@ FUNCTION Get_Biologicals
       }
     }
   }
-  } // end if for growth model are timb blocks
+  } // end if for growth model are tmb blocks
 
   if(growth_model_switch == 1) { // 3dar1 laa al matrix
   for(i = styr; i <= endyr;i++) {
-     if(i<growth_cutoffs(2))
+     if(i<=1995)
       {
        size_age_f(i)=sizeage1_f;
        size_age_m(i)=sizeage1_m;
       }
-     if(i>=growth_cutoffs(2))
-      {
-       size_age_f(i)=sizeage2_f;
-       size_age_m(i)=sizeage2_m;
-      }  
       if(i >= 1996) {
       size_age_f(i) = sizeage_tv_f(i);
       size_age_m(i) = sizeage_tv_m(i);
@@ -1772,13 +1766,15 @@ FUNCTION Get_Biologicals
   }
   } // end if for time-block method
 
-  if(growth_model_switch == 1) { // 3dar1 method
+  if(growth_model_switch == 1) { //l 3dar1 method
   for(i = styr; i <= endyr;i++) {
      if(i<=1995)
       {
        weight_f(i)=wt_f1;
        weight_m(i)=wt_m1; 
-      } else{
+      } 
+      if(i>=1996)
+      {
        weight_f(i) = wt_tv_f(i);
        weight_m(i) = wt_tv_m(i);
       }
@@ -1903,10 +1899,10 @@ FUNCTION Get_Selectivity
   a50_fish5_m=mfexp(log_a50_fish5_m);
   
   delta_fish1_f=mfexp(log_delta_fish1_f);    // linked because only 5 years length comp data (1990-1995) to est historic sel
-  delta_fish1_m=mfexp(log_delta_fish1_f);    // linked because only 5 years length comp data (1990-1995) to est historic sel
+  delta_fish1_m=mfexp(log_delta_fish1_m);    // linked because only 5 years length comp data (1990-1995) to est historic sel
   delta_fish2=mfexp(log_delta_fish1_f);     // linked because only 5 years length comp data (1990-1995) to est historic sel
   delta_fish3_f=mfexp(log_delta_fish3_f);
-  delta_fish3_m=mfexp(log_delta_fish3_m);    // linked bec parameters not well est prob due to limited sex-specific data, does not appear much diff in delta betw sexes so fixed by sex
+  delta_fish3_m=mfexp(log_delta_fish3_f);    // linked bec parameters not well est prob due to limited sex-specific data, does not appear much diff in delta betw sexes so fixed by sex
   delta_fish4_f=mfexp(log_delta_fish4_f);   
   delta_fish4_m=mfexp(log_delta_fish4_m);   
   delta_fish5_f=mfexp(log_delta_fish5_f);   
@@ -2496,19 +2492,19 @@ FUNCTION Get_Numbers_At_Age
       itmp = styr+1-j;
      if(sigma_R_early_switch==1 && itmp<sigma_R_early_end)
       {
-       natage_f(styr,j) =( mfexp(log_mean_rec  - (M(styr,j)) * double(j-1)+ log_rec_dev(itmp)-b(itmp)*sigma_R_early*sigma_R_early/2))/2; 
-       natage_m(styr,j) = (mfexp(log_mean_rec  - (M(styr,j)+mdelta) * double(j-1)+ log_rec_dev(itmp)-b(itmp)*sigma_R_early*sigma_R_early/2))/2;      
+       natage_f(styr,j) =( mfexp(log_mean_rec  - (M(styr,j)+hist_hal_F*fish1_sel_f(j)) * double(j-1)+ log_rec_dev(itmp)-b(itmp)*sigma_R_early*sigma_R_early/2))/2; 
+       natage_m(styr,j) = (mfexp(log_mean_rec  - (M(styr,j)+mdelta+hist_hal_F*fish1_sel_m(j)) * double(j-1)+ log_rec_dev(itmp)-b(itmp)*sigma_R_early*sigma_R_early/2))/2;      
       }
      else
       {
-       natage_f(styr,j) =( mfexp(log_mean_rec  - (M(styr,j)) * double(j-1)+ log_rec_dev(itmp)-b(itmp)*sigr*sigr/2))/2; 
-       natage_m(styr,j) = (mfexp(log_mean_rec  - (M(styr,j)+mdelta) * double(j-1)+ log_rec_dev(itmp)-b(itmp)*sigr*sigr/2))/2; 
+       natage_f(styr,j) =( mfexp(log_mean_rec  - (M(styr,j)+hist_hal_F*fish1_sel_f(j)) * double(j-1)+ log_rec_dev(itmp)-b(itmp)*sigr*sigr/2))/2; 
+       natage_m(styr,j) = (mfexp(log_mean_rec  - (M(styr,j)+mdelta+hist_hal_F*fish1_sel_m(j)) * double(j-1)+ log_rec_dev(itmp)-b(itmp)*sigr*sigr/2))/2; 
      }
      }
      
     // ########## calc for plus group
-      natage_f(styr,nages)      = (mfexp(log_mean_rec - (M(styr,nages-1)) * (nages-1))/ (1. - exp(-(M(styr,nages-1)))))/2;
-      natage_m(styr,nages)      = (mfexp(log_mean_rec - (M(styr,nages-1)+mdelta) * (nages-1))/ (1. - exp(-(M(styr,nages-1)+mdelta))))/2;
+      natage_f(styr,nages)      = (mfexp(log_mean_rec - (M(styr,nages-1)+hist_hal_F*fish1_sel_f(nages-1)) * (nages-1))/ (1. - exp(-(M(styr,nages-1)+hist_hal_F*fish1_sel_f(nages-1)))))/2;
+      natage_m(styr,nages)      = (mfexp(log_mean_rec - (M(styr,nages-1)+mdelta+hist_hal_F*fish1_sel_m(nages-1)) * (nages-1))/ (1. - exp(-(M(styr,nages-1)+mdelta+hist_hal_F*fish1_sel_m(nages-1)))))/2;
      }
     break;
    }
@@ -2740,8 +2736,6 @@ FUNCTION Get_Predicted_Values
    {
     eac_fish1_m(i)  = (catage_fish1_m(yrs_fish1_age(i))/sum(catage_fish1_m(yrs_fish1_age(i))))* ageage;                                                // Predicted Fishery age comps
     eac_fish1_f(i)  = (catage_fish1_f(yrs_fish1_age(i))/sum(catage_fish1_f(yrs_fish1_age(i))))* ageage;                                                // Predicted Fishery age comps
-    eac_fish1_f(i) /=sum(eac_fish1_f(i));
-    eac_fish1_m(i) /=sum(eac_fish1_m(i));
    }
 
  // Fishery Size Comp Calcs
@@ -2749,8 +2743,8 @@ FUNCTION Get_Predicted_Values
 
   for (i=1;i<=nyrs_fish1_size;i++)
    {                    
-    esc_fish1_m(i)  = catage_fish1_m(yrs_fish1_size(i))/sum(catage_fish1_m(yrs_fish1_size(i)))* size_age_m(yrs_fish1_size(i));    
-    esc_fish1_f(i)  = catage_fish1_f(yrs_fish1_size(i))/sum(catage_fish1_f(yrs_fish1_size(i)))* size_age_f(yrs_fish1_size(i));
+    esc_fish1_m(i)  = (catage_fish1_m(yrs_fish1_size(i))/sum(catage_fish1_m(yrs_fish1_size(i))))* size_age_m(yrs_fish1_size(i));    
+    esc_fish1_f(i)  = (catage_fish1_f(yrs_fish1_size(i))/sum(catage_fish1_f(yrs_fish1_size(i))))* size_age_f(yrs_fish1_size(i));
    }
    
   for (i=1;i<=nyrs_fish3_size;i++)
@@ -2773,26 +2767,20 @@ FUNCTION Get_Predicted_Values
    {
     if(yrs_srv1_age(i)<yr_sel_chg_srv1)
      {   
-      eac_srv1_f(i)  = (elem_prod(srv1_sel_f,natage_f(yrs_srv1_age(i))))* ageage;
-      eac_srv1_m(i)  = (elem_prod(srv1_sel_m,natage_m(yrs_srv1_age(i))))* ageage;
-      eac_srv1_f(i) /=sum(eac_srv1_f(i));
-      eac_srv1_m(i) /=sum(eac_srv1_m(i));
+      eac_srv1_f(i)  = ((elem_prod(srv1_sel_f,natage_f(yrs_srv1_age(i))))/sum(elem_prod(srv1_sel_f,natage_f(yrs_srv1_age(i))))) * ageage;
+      eac_srv1_m(i)  = ((elem_prod(srv1_sel_m,natage_m(yrs_srv1_age(i))))/sum(elem_prod(srv1_sel_m,natage_m(yrs_srv1_age(i))))) * ageage;
      } 
     if(yrs_srv1_age(i)>=yr_sel_chg_srv1)
      {
       if(ph_LL_block2>0)  // if estimating new selectivity for recent time block then use srv10 selectivity
        {   
-      eac_srv1_f(i)  = (elem_prod(srv10_sel_f,natage_f(yrs_srv1_age(i))))* ageage;
-      eac_srv1_m(i)  = (elem_prod(srv10_sel_m,natage_m(yrs_srv1_age(i))))* ageage;
-      eac_srv1_f(i) /=sum(eac_srv1_f(i));
-      eac_srv1_m(i) /=sum(eac_srv1_m(i));
+      eac_srv1_f(i)  = ((elem_prod(srv10_sel_f,natage_f(yrs_srv1_age(i))))/sum(elem_prod(srv10_sel_f,natage_f(yrs_srv1_age(i))))) * ageage;
+      eac_srv1_m(i)  = ((elem_prod(srv10_sel_m,natage_m(yrs_srv1_age(i))))/sum(elem_prod(srv10_sel_m,natage_m(yrs_srv1_age(i))))) * ageage;
        } 
       if(ph_LL_block2<1) // if not estimating new selectivity for recent time block then use srv1 selectivity
        {   
-      eac_srv1_f(i)  = (elem_prod(srv1_sel_f,natage_f(yrs_srv1_age(i))))* ageage;
-      eac_srv1_m(i)  = (elem_prod(srv1_sel_m,natage_m(yrs_srv1_age(i))))* ageage;
-      eac_srv1_f(i) /=sum(eac_srv1_f(i));
-      eac_srv1_m(i) /=sum(eac_srv1_m(i));
+      eac_srv1_f(i)  = ((elem_prod(srv1_sel_f,natage_f(yrs_srv1_age(i))))/sum(elem_prod(srv1_sel_f,natage_f(yrs_srv1_age(i))))) * ageage;
+      eac_srv1_m(i)  = ((elem_prod(srv1_sel_m,natage_m(yrs_srv1_age(i))))/sum(elem_prod(srv1_sel_m,natage_m(yrs_srv1_age(i))))) * ageage;
        }
      }
    }
@@ -2800,16 +2788,13 @@ FUNCTION Get_Predicted_Values
 
   for (i=1;i<=nyrs_srv2_age;i++)
    {
-    eac_srv2_f(i)  = (elem_prod(srv2_sel_f,natage_f(yrs_srv2_age(i))))*ageage;                        // Predicted Survey age comps
-    eac_srv2_m(i) = (elem_prod(srv2_sel_m,natage_m(yrs_srv2_age(i))))*ageage;
-    eac_srv2_f(i) /=sum(eac_srv2_f(i));
-    eac_srv2_m(i) /=sum(eac_srv2_m(i));
+    eac_srv2_f(i)  = ((elem_prod(srv2_sel_f,natage_f(yrs_srv2_age(i))))/ sum((elem_prod(srv2_sel_f,natage_f(yrs_srv2_age(i))))))*ageage;                        // Predicted Survey age comps
+    eac_srv2_m(i) = ((elem_prod(srv2_sel_m,natage_m(yrs_srv2_age(i)))) / sum((elem_prod(srv2_sel_m,natage_m(yrs_srv2_age(i))))))*ageage;
    }
    
   for (i=1;i<=nyrs_srv7_age;i++)
    {
-    eac_srv7(i)  = (elem_prod(srv7_sel_f,natage_f(yrs_srv7_age(i)))+elem_prod(srv7_sel_m,natage_m(yrs_srv7_age(i))))* ageage;                         // Predicted Survey age comps
-    eac_srv7(i) /=sum(eac_srv7(i));
+    eac_srv7(i)  = ((elem_prod(srv7_sel_f,natage_f(yrs_srv7_age(i)))+elem_prod(srv7_sel_m,natage_m(yrs_srv7_age(i)))) / sum((elem_prod(srv7_sel_f,natage_f(yrs_srv7_age(i)))+elem_prod(srv7_sel_m,natage_m(yrs_srv7_age(i))))))* ageage;                         // Predicted Survey age comps
    }
 
 
@@ -2819,44 +2804,34 @@ FUNCTION Get_Predicted_Values
    {
     if(yrs_srv1_size(i)<yr_sel_chg_srv1)
      {   
-      esc_srv1_m(i)  = elem_prod(srv1_sel_m,natage_m(yrs_srv1_size(i)))* size_age_m(yrs_srv1_size(i));        // Predicted Survey size comps (not used in POP model)
-      esc_srv1_m(i)  /=sum(esc_srv1_m(i));
-      esc_srv1_f(i)  = elem_prod(srv1_sel_f,natage_f(yrs_srv1_size(i))) * size_age_f(yrs_srv1_size(i));        // Predicted Survey size comps (not used in POP model)
-      esc_srv1_f(i)  /=sum(esc_srv1_f(i));
+      esc_srv1_m(i)  = (elem_prod(srv1_sel_m,natage_m(yrs_srv1_size(i)))/sum(elem_prod(srv1_sel_m,natage_m(yrs_srv1_size(i)))))* size_age_m(yrs_srv1_size(i));        // Predicted Survey size comps (not used in POP model)
+      esc_srv1_f(i)  = (elem_prod(srv1_sel_f,natage_f(yrs_srv1_size(i)))/sum(elem_prod(srv1_sel_f,natage_f(yrs_srv1_size(i))))) * size_age_f(yrs_srv1_size(i));        // Predicted Survey size comps (not used in POP model)
      } 
     if(yrs_srv1_size(i)>=yr_sel_chg_srv1)
      {
       if(ph_LL_block2>0)  // if estimating new selectivity for recent time block then use srv10 selectivity
        {   
-        esc_srv1_m(i)  = elem_prod(srv10_sel_m,natage_m(yrs_srv1_size(i))) * size_age_m(yrs_srv1_size(i));        // Predicted Survey size comps (not used in POP model)
-        esc_srv1_m(i)  /=sum(esc_srv1_m(i));
-        esc_srv1_f(i)  = elem_prod(srv10_sel_f,natage_f(yrs_srv1_size(i))) * size_age_f(yrs_srv1_size(i));        // Predicted Survey size comps (not used in POP model)
-        esc_srv1_f(i)  /=sum(esc_srv1_f(i));
+      esc_srv1_m(i)  = (elem_prod(srv10_sel_m,natage_m(yrs_srv1_size(i)))/sum(elem_prod(srv10_sel_m,natage_m(yrs_srv1_size(i)))))* size_age_m(yrs_srv1_size(i));        // Predicted Survey size comps (not used in POP model)
+      esc_srv1_f(i)  = (elem_prod(srv10_sel_f,natage_f(yrs_srv1_size(i)))/sum(elem_prod(srv10_sel_f,natage_f(yrs_srv1_size(i))))) * size_age_f(yrs_srv1_size(i));        // Predicted Survey size comps (not used in POP model)
        } 
       if(ph_LL_block2<1) // if not estimating new selectivity for recent time block then use srv1 selectivity
        {   
-        esc_srv1_m(i)  = elem_prod(srv1_sel_m,natage_m(yrs_srv1_size(i)))* size_age_m(yrs_srv1_size(i));        // Predicted Survey size comps (not used in POP model)
-        esc_srv1_m(i)  /=sum(esc_srv1_m(i));
-        esc_srv1_f(i)  = elem_prod(srv1_sel_f,natage_f(yrs_srv1_size(i))) * size_age_f(yrs_srv1_size(i));        // Predicted Survey size comps (not used in POP model)
-        esc_srv1_f(i)  /=sum(esc_srv1_f(i));
+      esc_srv1_m(i)  = (elem_prod(srv1_sel_m,natage_m(yrs_srv1_size(i)))/sum(elem_prod(srv1_sel_m,natage_m(yrs_srv1_size(i)))))* size_age_m(yrs_srv1_size(i));        // Predicted Survey size comps (not used in POP model)
+      esc_srv1_f(i)  = (elem_prod(srv1_sel_f,natage_f(yrs_srv1_size(i)))/sum(elem_prod(srv1_sel_f,natage_f(yrs_srv1_size(i))))) * size_age_f(yrs_srv1_size(i));        // Predicted Survey size comps (not used in POP model)
        }
      }
    }
 
   for ( i=1;i<=nyrs_srv2_size;i++)
    {
-    esc_srv2_m(i)  = elem_prod(srv2_sel_m,natage_m(yrs_srv2_size(i)))*  size_age_m(yrs_srv2_size(i));        // Predicted Survey size comps (not used in POP model)
-    esc_srv2_m(i)  /=sum(esc_srv2_m(i)); 
-    esc_srv2_f(i)  = elem_prod(srv2_sel_f,natage_f(yrs_srv2_size(i))) * size_age_f(yrs_srv2_size(i));        // Predicted Survey size comps (not used in POP model)
-    esc_srv2_f(i)  /=sum(esc_srv2_f(i));
+    esc_srv2_m(i)  = (elem_prod(srv2_sel_m,natage_m(yrs_srv2_size(i)))/sum(elem_prod(srv2_sel_m,natage_m(yrs_srv2_size(i)))))*  size_age_m(yrs_srv2_size(i));        // Predicted Survey size comps (not used in POP model)
+    esc_srv2_f(i)  = (elem_prod(srv2_sel_f,natage_f(yrs_srv2_size(i)))/sum(elem_prod(srv2_sel_f,natage_f(yrs_srv2_size(i))))) * size_age_f(yrs_srv2_size(i));        // Predicted Survey size comps (not used in POP model)
    }
    
   for ( i=1;i<=nyrs_srv7_size;i++)
    {
-    esc_srv7_m(i)  = elem_prod(srv7_sel_m,natage_m(yrs_srv7_size(i)))*size_age_m(yrs_srv7_size(i));        // Predicted Survey size comps (not used in POP model)
-    esc_srv7_f(i)  = elem_prod(srv7_sel_f,natage_f(yrs_srv7_size(i)))* size_age_f(yrs_srv7_size(i));       // Predicted Survey size comps (not used in POP model)
-    esc_srv7_f(i)  /=sum(esc_srv7_f(i)); 
-    esc_srv7_m(i)  /=sum(esc_srv7_m(i));
+    esc_srv7_m(i)  = (elem_prod(srv7_sel_m,natage_m(yrs_srv7_size(i)))/sum(elem_prod(srv7_sel_m,natage_m(yrs_srv7_size(i)))))*size_age_m(yrs_srv7_size(i));        // Predicted Survey size comps (not used in POP model)
+    esc_srv7_f(i)  = (elem_prod(srv7_sel_f,natage_f(yrs_srv7_size(i)))/sum(elem_prod(srv7_sel_f,natage_f(yrs_srv7_size(i)))))* size_age_f(yrs_srv7_size(i));       // Predicted Survey size comps (not used in POP model)
    }
 
 FUNCTION compute_spr_rates
@@ -2947,25 +2922,25 @@ FUNCTION compute_spr_rates
     for (j=1;j<=nages;j++)
      {
       // Kill them off till (spawn_fract)
-       SB0    += Nspr(1,j)*weight_maturity_prod_f(endyr,j)*mfexp(-spawn_fract*natmort);
+       SB0    += Nspr(1,j)*((weight_maturity_prod_f(endyr,j) + weight_maturity_prod_f(endyr-1,j) + weight_maturity_prod_f(endyr-2,j) + weight_maturity_prod_f(endyr-3,j) + weight_maturity_prod_f(endyr-4,j)))/5 *mfexp(-spawn_fract*natmort);
        
       if((ph_ifq>0) && (ph_ifq_block2<1))  // post-IFQ sel does not  includes a recent time block
        {
-        SBF50  += Nspr(2,j)*weight_maturity_prod_f(endyr,j)*mfexp(-spawn_fract*(natmort+fratio*mF50*fish4_sel_f(j)+(1-fratio)*mF50*fish3_sel_f(j)));
-        SBF40  += Nspr(3,j)*weight_maturity_prod_f(endyr,j)*mfexp(-spawn_fract*(natmort+fratio*mF40*fish4_sel_f(j)+(1-fratio)*mF40*fish3_sel_f(j)));
-        SBF35  += Nspr(4,j)*weight_maturity_prod_f(endyr,j)*mfexp(-spawn_fract*(natmort+fratio*mF35*fish4_sel_f(j)+(1-fratio)*mF35*fish3_sel_f(j)));
+        SBF50  += Nspr(2,j)*((weight_maturity_prod_f(endyr,j) + weight_maturity_prod_f(endyr-1,j) + weight_maturity_prod_f(endyr-2,j) + weight_maturity_prod_f(endyr-3,j) + weight_maturity_prod_f(endyr-4,j)))/5*mfexp(-spawn_fract*(natmort+fratio*mF50*fish4_sel_f(j)+(1-fratio)*mF50*fish3_sel_f(j)));
+        SBF40  += Nspr(3,j)*((weight_maturity_prod_f(endyr,j) + weight_maturity_prod_f(endyr-1,j) + weight_maturity_prod_f(endyr-2,j) + weight_maturity_prod_f(endyr-3,j) + weight_maturity_prod_f(endyr-4,j)))/5*mfexp(-spawn_fract*(natmort+fratio*mF40*fish4_sel_f(j)+(1-fratio)*mF40*fish3_sel_f(j)));
+        SBF35  += Nspr(4,j)*((weight_maturity_prod_f(endyr,j) + weight_maturity_prod_f(endyr-1,j) + weight_maturity_prod_f(endyr-2,j) + weight_maturity_prod_f(endyr-3,j) + weight_maturity_prod_f(endyr-4,j)))/5*mfexp(-spawn_fract*(natmort+fratio*mF35*fish4_sel_f(j)+(1-fratio)*mF35*fish3_sel_f(j)));
        }
       if((ph_ifq>0) && (ph_ifq_block2>0)) // post-IFQ sel includes a recent time block
        {
-        SBF50  += Nspr(2,j)*weight_maturity_prod_f(endyr,j)*mfexp(-spawn_fract*(natmort+fratio*mF50*fish5_sel_f(j)+(1-fratio)*mF50*fish3_sel_f(j)));
-        SBF40  += Nspr(3,j)*weight_maturity_prod_f(endyr,j)*mfexp(-spawn_fract*(natmort+fratio*mF40*fish5_sel_f(j)+(1-fratio)*mF40*fish3_sel_f(j)));
-        SBF35  += Nspr(4,j)*weight_maturity_prod_f(endyr,j)*mfexp(-spawn_fract*(natmort+fratio*mF35*fish5_sel_f(j)+(1-fratio)*mF35*fish3_sel_f(j)));
+        SBF50  += Nspr(2,j)*((weight_maturity_prod_f(endyr,j) + weight_maturity_prod_f(endyr-1,j) + weight_maturity_prod_f(endyr-2,j) + weight_maturity_prod_f(endyr-3,j) + weight_maturity_prod_f(endyr-4,j)))/5*mfexp(-spawn_fract*(natmort+fratio*mF50*fish5_sel_f(j)+(1-fratio)*mF50*fish3_sel_f(j)));
+        SBF40  += Nspr(3,j)*((weight_maturity_prod_f(endyr,j) + weight_maturity_prod_f(endyr-1,j) + weight_maturity_prod_f(endyr-2,j) + weight_maturity_prod_f(endyr-3,j) + weight_maturity_prod_f(endyr-4,j)))/5*mfexp(-spawn_fract*(natmort+fratio*mF40*fish5_sel_f(j)+(1-fratio)*mF40*fish3_sel_f(j)));
+        SBF35  += Nspr(4,j)*((weight_maturity_prod_f(endyr,j) + weight_maturity_prod_f(endyr-1,j) + weight_maturity_prod_f(endyr-2,j) + weight_maturity_prod_f(endyr-3,j) + weight_maturity_prod_f(endyr-4,j)))/5*mfexp(-spawn_fract*(natmort+fratio*mF35*fish5_sel_f(j)+(1-fratio)*mF35*fish3_sel_f(j)));
        }
       if(ph_ifq<1) // no post-IFQ sel est
        {
-        SBF50  += Nspr(2,j)*weight_maturity_prod_f(endyr,j)*mfexp(-spawn_fract*(natmort+fratio*mF50*fish1_sel_f(j)+(1-fratio)*mF50*fish3_sel_f(j)));
-        SBF40  += Nspr(3,j)*weight_maturity_prod_f(endyr,j)*mfexp(-spawn_fract*(natmort+fratio*mF40*fish1_sel_f(j)+(1-fratio)*mF40*fish3_sel_f(j)));
-        SBF35  += Nspr(4,j)*weight_maturity_prod_f(endyr,j)*mfexp(-spawn_fract*(natmort+fratio*mF35*fish1_sel_f(j)+(1-fratio)*mF35*fish3_sel_f(j)));
+        SBF50  += Nspr(2,j)*((weight_maturity_prod_f(endyr,j) + weight_maturity_prod_f(endyr-1,j) + weight_maturity_prod_f(endyr-2,j) + weight_maturity_prod_f(endyr-3,j) + weight_maturity_prod_f(endyr-4,j)))/5*mfexp(-spawn_fract*(natmort+fratio*mF50*fish1_sel_f(j)+(1-fratio)*mF50*fish3_sel_f(j)));
+        SBF40  += Nspr(3,j)*((weight_maturity_prod_f(endyr,j) + weight_maturity_prod_f(endyr-1,j) + weight_maturity_prod_f(endyr-2,j) + weight_maturity_prod_f(endyr-3,j) + weight_maturity_prod_f(endyr-4,j)))/5*mfexp(-spawn_fract*(natmort+fratio*mF40*fish1_sel_f(j)+(1-fratio)*mF40*fish3_sel_f(j)));
+        SBF35  += Nspr(4,j)*((weight_maturity_prod_f(endyr,j) + weight_maturity_prod_f(endyr-1,j) + weight_maturity_prod_f(endyr-2,j) + weight_maturity_prod_f(endyr-3,j) + weight_maturity_prod_f(endyr-4,j)))/5*mfexp(-spawn_fract*(natmort+fratio*mF35*fish1_sel_f(j)+(1-fratio)*mF35*fish3_sel_f(j)));
        }
       }  // end NAGES loop
    
@@ -2973,6 +2948,7 @@ FUNCTION compute_spr_rates
   sprpen   += 100.*square(SBF40/SB0-0.4);
   sprpen   += 100.*square(SBF35/SB0-0.35);
   B40       = 0.5*SBF40*mean(pred_rec(1979,endyr-recage));
+  b40rat = spawn_biom / B40;
   
 FUNCTION Calc_priors
 
@@ -3341,9 +3317,9 @@ FUNCTION Evaluate_Objective_Function
   // Calculate sex ratios here
   for (i=1; i <= nyrs_fish1_age; i++) {
     osra_fish1_f(i) = mean(elem_div(oac_fish1_f(i), oac_fish1_f(i) + oac_fish1_m(i) + 0.001)); 
-    esra_fish1_f(i) = mean(elem_div(catage_fish1_f(yrs_fish1_age(i))*ageage, catage_fish1_f(yrs_fish1_age(i))*ageage + catage_fish1_m(yrs_fish1_age(i))*ageage + 0.001)); 
+    esra_fish1_f(i) = mean(elem_div(catage_fish1_f(yrs_fish1_age(i))*ageage, (catage_fish1_f(yrs_fish1_age(i))*ageage) + (catage_fish1_m(yrs_fish1_age(i))*ageage) + 0.001)); 
   }
-   sexratio_like(1) = norm2(osra_fish1_f - esra_fish1_f);
+   sexratio_like(1) = norm2(log(osra_fish1_f) - log(esra_fish1_f));
 
   for (i=1; i <= nyrs_srv1_age; i++) {
     osra_srv1_f(i) = mean(elem_div(oac_srv1_f(i), oac_srv1_f(i) + oac_srv1_m(i) + 0.001)); 
@@ -3351,49 +3327,49 @@ FUNCTION Evaluate_Objective_Function
   if(yrs_srv1_size(i)<yr_sel_chg_srv1)
      {   
     esra_srv1_f(i) = mean(elem_div(elem_prod(srv1_sel_f,natage_f(yrs_srv1_age(i)))*ageage, 
-                     elem_prod(srv1_sel_f,natage_f(yrs_srv1_age(i)))*ageage + 
-                     elem_prod(srv1_sel_f,natage_f(yrs_srv1_age(i)))*ageage + 0.001)); 
+                     (elem_prod(srv1_sel_f,natage_f(yrs_srv1_age(i)))*ageage) + 
+                     (elem_prod(srv1_sel_f,natage_f(yrs_srv1_age(i)))*ageage) + 0.001)); 
     }
   if(yrs_srv1_size(i)>=yr_sel_chg_srv1)
      {
       if(ph_LL_block2>0)  // if estimating new selectivity for recent time block then use srv10 selectivity
        {   
     esra_srv1_f(i) = mean(elem_div(elem_prod(srv10_sel_f,natage_f(yrs_srv1_age(i)))*ageage, 
-                     elem_prod(srv10_sel_f,natage_f(yrs_srv1_age(i)))*ageage + 
-                     elem_prod(srv10_sel_f,natage_f(yrs_srv1_age(i)))*ageage + 0.001)); 
+                     (elem_prod(srv10_sel_f,natage_f(yrs_srv1_age(i)))*ageage) + 
+                     (elem_prod(srv10_sel_f,natage_f(yrs_srv1_age(i)))*ageage) + 0.001)); 
        } 
       if(ph_LL_block2<1) // if not estimating new selectivity for recent time block then use srv1 selectivity
        {   
     esra_srv1_f(i) = mean(elem_div(elem_prod(srv1_sel_f,natage_f(yrs_srv1_age(i)))*ageage, 
-                     elem_prod(srv1_sel_f,natage_f(yrs_srv1_age(i)))*ageage + 
-                     elem_prod(srv1_sel_f,natage_f(yrs_srv1_age(i)))*ageage + 0.001)); 
+                     (elem_prod(srv1_sel_f,natage_f(yrs_srv1_age(i)))*ageage) + 
+                     (elem_prod(srv1_sel_f,natage_f(yrs_srv1_age(i)))*ageage) + 0.001)); 
        }
      }
   }
 
-   sexratio_like(2) = norm2(osra_srv1_f - esra_srv1_f);
+   sexratio_like(2) = norm2(log(osra_srv1_f) - log(esra_srv1_f));
 
   for (i=1; i <= nyrs_srv2_age; i++) {
     osra_srv2_f(i) = mean(elem_div(oac_srv2_f(i), oac_srv2_f(i) + oac_srv2_m(i) + 0.001)); 
-    esra_srv2_f(i) = mean(elem_div(elem_prod(srv2_sel_f,natage_f(yrs_srv2_age(i)))*ageage, elem_prod(srv2_sel_f,natage_f(yrs_srv2_age(i)))*ageage + elem_prod(srv2_sel_f,natage_f(yrs_srv2_age(i)))*ageage + 0.001)); 
+    esra_srv2_f(i) = mean(elem_div(elem_prod(srv2_sel_f,natage_f(yrs_srv2_age(i)))*ageage, (elem_prod(srv2_sel_f,natage_f(yrs_srv2_age(i)))*ageage) + (elem_prod(srv2_sel_f,natage_f(yrs_srv2_age(i)))*ageage) + 0.001)); 
   }
-   sexratio_like(3) = norm2(osra_srv2_f - esra_srv2_f);
+   sexratio_like(3) = norm2(log(osra_srv2_f) - log(esra_srv2_f));
 
   for (i=1; i <= nyrs_fish1_size; i++) {
     osrs_fish1_f(i) = mean(elem_div(osc_fish1_f(i), osc_fish1_f(i) + osc_fish1_m(i) + 0.001)); 
     esrs_fish1_f(i) = mean(elem_div(catage_fish1_f(yrs_fish1_size(i))/sum(catage_fish1_f(yrs_fish1_size(i)))* size_age_f(yrs_fish1_size(i)),
-                      catage_fish1_f(yrs_fish1_size(i))/sum(catage_fish1_f(yrs_fish1_size(i)))* size_age_f(yrs_fish1_size(i)) + 
-                      catage_fish1_m(yrs_fish1_size(i))/sum(catage_fish1_m(yrs_fish1_size(i)))* size_age_m(yrs_fish1_size(i)) + 0.001)); 
+                      (catage_fish1_f(yrs_fish1_size(i))/sum(catage_fish1_f(yrs_fish1_size(i)))* size_age_f(yrs_fish1_size(i))) + 
+                      (catage_fish1_m(yrs_fish1_size(i))/sum(catage_fish1_m(yrs_fish1_size(i)))* size_age_m(yrs_fish1_size(i))) + 0.001)); 
   }
-   sexratio_like(4) = norm2(osrs_fish1_f - esrs_fish1_f);
+   sexratio_like(4) = norm2(log(osrs_fish1_f) - log(esrs_fish1_f));
 
   for (i=1; i <= nyrs_fish3_size; i++) {
     osrs_fish3_f(i) = mean(elem_div(osc_fish3_f(i), osc_fish3_f(i) + osc_fish3_m(i) + 0.001)); 
     esrs_fish3_f(i) = mean(elem_div(catage_fish3_f(yrs_fish3_size(i))/sum(catage_fish3_f(yrs_fish3_size(i)))* size_age_f(yrs_fish3_size(i)),
-                      catage_fish3_f(yrs_fish3_size(i))/sum(catage_fish3_f(yrs_fish3_size(i)))* size_age_f(yrs_fish3_size(i)) + 
-                      catage_fish3_m(yrs_fish3_size(i))/sum(catage_fish3_m(yrs_fish3_size(i)))* size_age_m(yrs_fish3_size(i)) + 0.001)); 
+                      (catage_fish3_f(yrs_fish3_size(i))/sum(catage_fish3_f(yrs_fish3_size(i)))* size_age_f(yrs_fish3_size(i))) + 
+                      (catage_fish3_m(yrs_fish3_size(i))/sum(catage_fish3_m(yrs_fish3_size(i)))* size_age_m(yrs_fish3_size(i))) + 0.001)); 
   }
-   sexratio_like(5) = norm2(osrs_fish3_f - esrs_fish3_f);
+   sexratio_like(5) = norm2(log(osrs_fish3_f) - log(esrs_fish3_f));
 
   for (i=1; i <= nyrs_srv1_size; i++) {
     osrs_srv1_f(i) = mean(elem_div(osc_srv1_f(i), osc_srv1_f(i) + osc_srv1_m(i) + 0.001)); 
@@ -3401,8 +3377,8 @@ FUNCTION Evaluate_Objective_Function
   if(yrs_srv1_size(i)<yr_sel_chg_srv1)
      {   
     esrs_srv1_f(i) = mean(elem_div(elem_prod(srv1_sel_f,natage_f(yrs_srv1_size(i))) * size_age_f(yrs_srv1_size(i)),
-                     elem_prod(srv1_sel_f,natage_f(yrs_srv1_size(i))) * size_age_f(yrs_srv1_size(i)) + 
-                     elem_prod(srv1_sel_m,natage_m(yrs_srv1_size(i))) * size_age_m(yrs_srv1_size(i)) + 0.001)); 
+                     (elem_prod(srv1_sel_f,natage_f(yrs_srv1_size(i))) * size_age_f(yrs_srv1_size(i))) + 
+                     (elem_prod(srv1_sel_m,natage_m(yrs_srv1_size(i))) * size_age_m(yrs_srv1_size(i))) + 0.001)); 
 
     }
   if(yrs_srv1_size(i)>=yr_sel_chg_srv1)
@@ -3410,34 +3386,34 @@ FUNCTION Evaluate_Objective_Function
       if(ph_LL_block2>0)  // if estimating new selectivity for recent time block then use srv10 selectivity
        {   
         esrs_srv1_f(i) = mean(elem_div(elem_prod(srv10_sel_f,natage_f(yrs_srv1_size(i))) * size_age_f(yrs_srv1_size(i)),
-                     elem_prod(srv10_sel_f,natage_f(yrs_srv1_size(i))) * size_age_f(yrs_srv1_size(i)) + 
-                     elem_prod(srv10_sel_f,natage_m(yrs_srv1_size(i))) * size_age_m(yrs_srv1_size(i)) + 0.001)); 
+                     (elem_prod(srv10_sel_f,natage_f(yrs_srv1_size(i))) * size_age_f(yrs_srv1_size(i))) + 
+                     (elem_prod(srv10_sel_f,natage_m(yrs_srv1_size(i))) * size_age_m(yrs_srv1_size(i))) + 0.001)); 
        } 
       if(ph_LL_block2<1) // if not estimating new selectivity for recent time block then use srv1 selectivity
        {   
         esrs_srv1_f(i) = mean(elem_div(elem_prod(srv1_sel_f,natage_f(yrs_srv1_size(i))) * size_age_f(yrs_srv1_size(i)),
-                     elem_prod(srv1_sel_f,natage_f(yrs_srv1_size(i))) * size_age_f(yrs_srv1_size(i)) + 
-                     elem_prod(srv1_sel_m,natage_m(yrs_srv1_size(i))) * size_age_m(yrs_srv1_size(i)) + 0.001)); 
+                     (elem_prod(srv1_sel_f,natage_f(yrs_srv1_size(i))) * size_age_f(yrs_srv1_size(i))) + 
+                     (elem_prod(srv1_sel_m,natage_m(yrs_srv1_size(i))) * size_age_m(yrs_srv1_size(i))) + 0.001)); 
        }
      }
   }
-   sexratio_like(6) = norm2(osrs_srv1_f - esrs_srv1_f);
+   sexratio_like(6) = norm2(log(osrs_srv1_f) - log(esrs_srv1_f));
 
   for (i=1; i <= nyrs_srv2_size; i++) {
     osrs_srv2_f(i) = mean(elem_div(osc_srv2_f(i), osc_srv2_f(i) + osc_srv2_m(i) + 0.001)); 
     esrs_srv2_f(i) = mean(elem_div(elem_prod(srv2_sel_f,natage_f(yrs_srv2_size(i))) * size_age_f(yrs_srv2_size(i)),
-                     elem_prod(srv2_sel_f,natage_f(yrs_srv2_size(i))) * size_age_f(yrs_srv2_size(i)) + 
-                     elem_prod(srv2_sel_m,natage_m(yrs_srv2_size(i))) * size_age_m(yrs_srv2_size(i)) + 0.001)); 
+                     (elem_prod(srv2_sel_f,natage_f(yrs_srv2_size(i))) * size_age_f(yrs_srv2_size(i))) + 
+                     (elem_prod(srv2_sel_m,natage_m(yrs_srv2_size(i))) * size_age_m(yrs_srv2_size(i))) + 0.001)); 
   }
-   sexratio_like(7) = norm2(osrs_srv2_f - esrs_srv2_f);
+   sexratio_like(7) = norm2(log(osrs_srv2_f) - log(esrs_srv2_f));
 
   for (i=1; i <= nyrs_srv7_size; i++) {
     osrs_srv7_f(i) = mean(elem_div(osc_srv7_f(i), osc_srv7_f(i) + osc_srv7_m(i) + 0.001)); 
     esrs_srv7_f(i) = mean(elem_div(elem_prod(srv7_sel_f,natage_f(yrs_srv7_size(i))) * size_age_f(yrs_srv7_size(i)),
-                     elem_prod(srv7_sel_f,natage_f(yrs_srv7_size(i))) * size_age_f(yrs_srv7_size(i)) + 
-                     elem_prod(srv7_sel_m,natage_m(yrs_srv7_size(i))) * size_age_m(yrs_srv7_size(i)) + 0.001)); 
+                     (elem_prod(srv7_sel_f,natage_f(yrs_srv7_size(i))) * size_age_f(yrs_srv7_size(i))) + 
+                     (elem_prod(srv7_sel_m,natage_m(yrs_srv7_size(i))) * size_age_m(yrs_srv7_size(i))) + 0.001)); 
   }
-   sexratio_like(8) = norm2(osrs_srv7_f - esrs_srv7_f);
+   sexratio_like(8) = norm2(log(osrs_srv7_f) - log(esrs_srv7_f));
 
     for(y=(styr-nages+2);y<=endyr_rec_est;y++)   /// implement Methot and Taylor (2011) bias ramp adjustment for recruit penalty term
     {
@@ -3516,9 +3492,9 @@ FUNCTION Evaluate_Objective_Function
   obj_fun           += ssqcatch ;
   obj_fun           += sum(surv_like);
   obj_fun           += sum(age_like);
+  obj_fun           += sum(sexratio_like);
   Like = obj_fun;                     // Put here to capture the data likelihood
   obj_fun           += rec_like;
-  obj_fun           += sum(sexratio_like);
 
 
 

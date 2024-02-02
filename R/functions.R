@@ -13,8 +13,7 @@ get_al_trans_matrix = function(age_bins, len_bins, mean_length, sd) {
   
   # Construct age length matrix
   age_length = matrix(0.0, nrow = length(age_bins), ncol = length(len_bins))
-  age_length = matrix(0.0, nrow = length(age_bins), ncol = length(len_bins))
-  
+
   for(age_ndx in 1:length(age_bins)) {
     for(len_ndx in 1:length(len_bins)) {
       if (len_ndx == 1) {
@@ -27,8 +26,6 @@ get_al_trans_matrix = function(age_bins, len_bins, mean_length, sd) {
       }
     }
   }
-  age_length = prop.table(age_length, margin = 1) # renomalize if they aren't already
-
   return(age_length)
 } # end function
 
@@ -77,6 +74,7 @@ prepare_data = function(data, obs_sd_mat, age_bins, growth_model_name, re_model_
   
   if(growth_model_name == "length") {
     map$ln_alpha = factor(NA)
+    map$ln_obs_sigma2 = factor(c(1, NA)) # using cv parameterization
     # parameters$ln_Lmin = -6 # t0
   } # length models
   

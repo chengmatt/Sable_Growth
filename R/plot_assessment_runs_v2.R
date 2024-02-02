@@ -301,7 +301,7 @@ all_avg_fixed_gear_plot_df = rbind(avg_gv_lc_fish1, avg_sq_lc_fish1)
 
 sq_lenfish1f = get_osa_res(obs = grwth_sq_sab_curr$olc.fish1.f, 
                            pred = grwth_sq_sab_curr$elc.fish1.f, 
-                           iss = rep(20, nrow(grwth_sq_sab_curr$elc.fish1.f)), 
+                           iss = c(rep(20, 8), rep(0, nrow(grwth_sq_sab_curr$elc.fish1.f) - 8)), 
                            iter_wt = as.numeric(strsplit(grw_sq_ctl_wts[str_detect(grw_sq_ctl_wts, "#wt fish1 size comp female iter")], " ")[[1]][1]), 
                            index = seq(43,99,2),
                            drop_bin = 1)
@@ -312,7 +312,7 @@ sq_lenfish1f_plot = res_plot(data = sq_lenfish1f[[1]],
 
 gv_lenfish1f = get_osa_res(obs = grwth_vary_sab_curr$olc.fish1.f, 
                            pred = grwth_vary_sab_curr$elc.fish1.f, 
-                           iss = rep(20, nrow(grwth_vary_sab_curr$elc.fish1.f)), 
+                           iss = c(rep(20, 8), rep(0, nrow(grwth_sq_sab_curr$elc.fish1.f) - 8)), 
                            iter_wt = as.numeric(strsplit(grw_vary_ctl_wts[str_detect(grw_vary_ctl_wts, "#wt fish1 size comp female iter")], " ")[[1]][1]), 
                            index = seq(43,99,2),
                            drop_bin = 1)
@@ -323,7 +323,7 @@ gv_lenfish1f_plot = res_plot(data = gv_lenfish1f[[1]],
 
 sq_fish1m = get_osa_res(obs = grwth_sq_sab_curr$olc.fish1.m, 
                         pred = grwth_sq_sab_curr$elc.fish1.m, 
-                        iss = rep(20, nrow(grwth_sq_sab_curr$elc.fish1.m)), 
+                        iss = c(rep(20, 8), rep(0, nrow(grwth_sq_sab_curr$elc.fish1.f) - 8)), 
                         iter_wt = as.numeric(strsplit(grw_sq_ctl_wts[str_detect(grw_sq_ctl_wts, "#wt fish1 size comp male iter")], " ")[[1]][1]), 
                         index = seq(43,99,2),
                         drop_bin = 1)
@@ -334,7 +334,7 @@ sq_fish1m_plot = res_plot(data = sq_fish1m[[1]],
 
 gv_fish1m = get_osa_res(obs = grwth_vary_sab_curr$olc.fish1.m, 
                         pred = grwth_vary_sab_curr$elc.fish1.m, 
-                        iss = rep(20, nrow(grwth_vary_sab_curr$elc.fish1.m)), 
+                        iss = c(rep(20, 8), rep(0, nrow(grwth_sq_sab_curr$elc.fish1.f) - 8)), 
                         iter_wt = as.numeric(strsplit(grw_vary_ctl_wts[str_detect(grw_vary_ctl_wts, "#wt fish1 size comp male iter")], " ")[[1]][1]), 
                         index = seq(43,99,2),
                         drop_bin = 1)
@@ -752,7 +752,7 @@ all_avg_srv_ll_plot_df = rbind(avg_gv_lc_srv1, avg_sq_lc_srv1)
 
 sq_lensrv1f = get_osa_res(obs = grwth_sq_sab_curr$olc.srv1.f, 
                           pred = grwth_sq_sab_curr$elc.srv1.f, 
-                          iss = rep(20, nrow(grwth_sq_sab_curr$elc.srv1.f)), 
+                          iss = c(rep(20, 8), rep(0, nrow(grwth_sq_sab_curr$olc.srv1.f) - 9), 20), 
                           iter_wt = as.numeric(strsplit(grw_sq_ctl_wts[str_detect(grw_sq_ctl_wts, "#wt surv1 size comp female iter")], " ")[[1]][1]), 
                           index = seq(43,99,2),
                           drop_bin = 1)
@@ -763,7 +763,7 @@ sq_lensrv1f_plot = res_plot(data = sq_lensrv1f[[1]],
 
 gv_lensrv1f = get_osa_res(obs = grwth_vary_sab_curr$olc.srv1.f, 
                           pred = grwth_vary_sab_curr$elc.srv1.f, 
-                          iss = rep(20, nrow(grwth_vary_sab_curr$elc.srv1.f)), 
+                          iss = c(rep(20, 8), rep(0, nrow(grwth_sq_sab_curr$olc.srv1.f) - 9), 20), 
                           iter_wt = as.numeric(strsplit(grw_vary_ctl_wts[str_detect(grw_vary_ctl_wts, "#wt surv1 size comp female iter")], " ")[[1]][1]), 
                           index = seq(43,99,2),
                           drop_bin = 1)
@@ -774,7 +774,7 @@ gv_lensrv1f_plot = res_plot(data = gv_lensrv1f[[1]],
 
 sq_srv1m = get_osa_res(obs = grwth_sq_sab_curr$olc.srv1.m, 
                        pred = grwth_sq_sab_curr$elc.srv1.m, 
-                       iss = rep(20, nrow(grwth_sq_sab_curr$elc.srv1.m)), 
+                       iss = c(rep(20, 8), rep(0, nrow(grwth_sq_sab_curr$olc.srv1.f) - 9), 20), 
                        iter_wt = as.numeric(strsplit(grw_sq_ctl_wts[str_detect(grw_sq_ctl_wts, "#wt surv1 size comp male iter")], " ")[[1]][1]), 
                        index = seq(43,99,2),
                        drop_bin = 1)
@@ -785,7 +785,7 @@ sq_srv1m_plot = res_plot(data = sq_srv1m[[1]],
 
 gv_srv1m = get_osa_res(obs = grwth_vary_sab_curr$olc.srv1.m, 
                        pred = grwth_vary_sab_curr$elc.srv1.m, 
-                       iss = rep(20, nrow(grwth_vary_sab_curr$elc.srv1.m)), 
+                       iss = c(rep(20, 8), rep(0, nrow(grwth_sq_sab_curr$olc.srv1.f) - 9), 20), 
                        iter_wt = as.numeric(strsplit(grw_vary_ctl_wts[str_detect(grw_vary_ctl_wts, "#wt surv1 size comp male iter")], " ")[[1]][1]), 
                        index = seq(43,99,2),
                        drop_bin = 1)
@@ -1039,6 +1039,8 @@ ggplot(ssb_df %>% filter(Year <= 2023),
        aes(x = Year, y = ssb, ymin = downr, ymax = upr, fill = type)) +
   geom_line(aes(color = type), size = 1.5) +
   geom_ribbon(alpha = 0.3) +
+  scale_color_manual(values = c("#0072B2", "#D55E00")) +
+  scale_fill_manual(values = c("#0072B2", "#D55E00")) +
   geom_hline(aes(yintercept = b40, color = type), lty = 2, size = 1.5) +
   geom_text(label = "B40%", aes(x = 2013, y = 135), size = 13, check_overlap = TRUE) +
   theme_reg() +
@@ -1047,11 +1049,17 @@ ggplot(ssb_df %>% filter(Year <= 2023),
 dev.off()
 
 # Compare SSB vs B40 ------------------------------------------------------
+gv_b40_rat <- par_coeff(gv_par, "b40rat", type = "Growth Vary") %>% mutate(Year = 1960:2023)
+sq_b40_rat <- par_coeff(sq_par, "b40rat", type = "Growth SQ") %>% mutate(Year = 1960:2023)
+b40rat_df = rbind(gv_b40_rat, sq_b40_rat)
+
 pdf(here("figs", "Model Comparison", "Bratio_Comparison.pdf"))
-ggplot(ssb_df %>% filter(Year >= 1996, Year<= 2023), 
-       aes(x = Year, y = Bratio, color = type)) +
-  geom_line(size = 1.5, alpha = 0.55) +
-  geom_point(size = 4) +
+ggplot(b40rat_df %>% filter(Year >= 1995, Year<= 2023), 
+       aes(x = Year, y = coeff, ymin = downr, ymax = upr, fill = type, color = type)) +
+  geom_ribbon(alpha = 0.3, color = NA) +
+  geom_line(size = 1.5, alpha = 1) +
+  scale_color_manual(values = c("#0072B2", "#D55E00")) +
+  scale_fill_manual(values = c("#0072B2", "#D55E00")) +
   geom_hline(yintercept = 1, lty = 2, size = 1.3) +
   theme_reg() +
   theme(legend.position = "top") +
@@ -1073,9 +1081,12 @@ rec_df = rec_df %>% left_join(meanrec_df %>% rename(meanrec = coeff) %>% mutate(
   mutate(Model_Comps = ifelse(str_detect(type, "Partial"), "Partial Length", "Full"))
 
 pdf(here("figs", "Model Comparison", "Recruitment_Comparison.pdf"))
-ggplot(rec_df %>% filter(Year != 2023), aes(x = Year - 2, y = rec, ymin = downr, ymax = upr, fill = type)) +
+ggplot(rec_df %>% filter(Year %in% c(1979:2022)), 
+       aes(x = Year - 2, y = rec, ymin = downr, ymax = upr, fill = type)) +
   geom_line(aes(color = type), size = 1.2) +
   geom_ribbon(alpha = 0.4) +
+  scale_color_manual(values = c("#0072B2", "#D55E00")) +
+  scale_fill_manual(values = c("#0072B2", "#D55E00")) +
   geom_hline(aes(yintercept = meanrec, color = type), lty = 2, size = 1.3) +
   theme_reg() +
   theme(legend.position = "top") +
@@ -1114,8 +1125,10 @@ pdf(here("figs", "Model Comparison", "Selectivity_Comparison.pdf"),  height = 12
 ggplot(all_sel_df,
   aes(x = Age, y = coeff, ymin = downr, ymax = upr, fill = type)) +
   geom_line(aes(color = type), size = 1.2, alpha = 0.5) +
-  geom_point(aes(color = type), size = 1.5) +
+  # geom_point(aes(color = type), size = 1.5) +
   geom_ribbon(alpha = 0.3) +
+  scale_color_manual(values = c("#0072B2", "#D55E00")) +
+  scale_fill_manual(values = c("#0072B2", "#D55E00")) +
   theme_reg() +
   theme(legend.position = "top") +
   facet_wrap(~sel) +
@@ -1136,6 +1149,8 @@ ggplot(ref_df, aes(x = type, y = coeff, ymin = downr, ymax = upr, color = type))
   geom_pointrange(position = position_dodge(width = 0.2)) +
   labs(x = "Reference Point", y = "Value", color = "Model") +
   scale_x_discrete(guide = guide_axis(angle = 90)) +
+  scale_color_manual(values = c("#0072B2", "#D55E00")) +
+  scale_fill_manual(values = c("#0072B2", "#D55E00")) +
   facet_wrap(~coeff_type, scales = "free") +
   theme_reg() 
 dev.off()
@@ -1176,6 +1191,8 @@ ggplot(idx_df) +
   geom_pointrange(mapping = aes(x = year, y = obs, ymin = lci, ymax = uci), 
                   alpha = 0.35, size = 0.75, col = "black") +
   facet_wrap(~type, scales = "free") +
+  scale_color_manual(values = c("#0072B2", "#D55E00")) +
+  scale_fill_manual(values = c("#0072B2", "#D55E00")) +
   scale_y_continuous(limits = c(0, NA)) +  # NA for no upper limit
   labs(x = "Year", y = "Index") +
   theme_reg() +
@@ -1203,6 +1220,8 @@ ggplot(fmort_all, aes(x = Year, y = coeff, ymin = downr, ymax = upr, fill = type
   geom_line(aes(color = type), size = 1) +
   geom_ribbon(alpha = 0.3) +
   facet_wrap(~coeff_type) +
+  scale_color_manual(values = c("#0072B2", "#D55E00")) +
+  scale_fill_manual(values = c("#0072B2", "#D55E00")) +
   theme_reg() +
   theme(legend.position = "top") +
   labs(x = "Year", y = "Annual Fishing Mortality Multiplier", color = "Model", fill = "Model")
@@ -1236,6 +1255,8 @@ ggplot(all_catch) +
   geom_line(mapping = aes(x = Year, y = Pred, color = Model), size = 1.3, alpha = 0.85) +
   geom_point(mapping = aes(x = Year, y = Obs), size = 2, alpha = 0.5) +
   theme_reg() +
+  scale_color_manual(values = c("#0072B2", "#D55E00")) +
+  scale_fill_manual(values = c("#0072B2", "#D55E00")) +
   facet_wrap(~Gear) +
   theme(legend.position = "top") +
   labs(x = "Year", y = "Catch (kt)", color = "Model", fill = "Model")

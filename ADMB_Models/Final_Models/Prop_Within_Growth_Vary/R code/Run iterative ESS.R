@@ -1,6 +1,6 @@
 ##################################################################################################################################################################
 # Perform Francis Reweighting of Compositional Data Based on Francis (2011, 2017)
-# Code adapted from Pete Hulson (pete.hulson@noaa.gov) by Dan Goethel (dallllniel.goethel@noaa.gov) for sablefish assessment model
+# Code adapted from Pete Hulson (pete.hulson@noaa.gov) by Dan Goethel (daniel.goethel@noaa.gov) for sablefish assessment model
 # See associated README file for more details on methodology
 ##################################################################################################################################################################
 

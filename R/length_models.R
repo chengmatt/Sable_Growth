@@ -38,7 +38,7 @@ age_bins = sort(unique(age_dat$Tester_Age)) # set up number of age bins
 re_model = c("constant", "3dar1")
 sex_names = unique(age_dat$Sex_name)
 years = sort(unique(age_dat$Year))
-n_retro = 15
+n_retro = 10
 n_proj = 1 # projection years
 
 # Run Models --------------------------------------------------------------
@@ -58,8 +58,7 @@ for(r in 1:length(re_model)) {
       mod_df = age_dat %>% filter(Sex_name == sex_names[s], # filter to sex
                          Year %in% c(0:(length(years)-y-1))) %>%  # peel back years
         mutate(Tester_Age = Tester_Age - min(Tester_Age)) %>% # subtract age for tmb (prob not necessary)
-        select(-Sex_name) %>% 
-        filter(Length >= 41)
+        select(-Sex_name) 
       
       # set up model inputs
       model_inputs = prepare_data(data = mod_df, # model dataframe
@@ -77,7 +76,7 @@ for(r in 1:length(re_model)) {
       model = MakeADFun(data = model_inputs$data, 
                         parameters = model_inputs$parameters, 
                         DLL = "Growth_Model", random = c("ln_eps_at"), # specify what to integrate out
-                        map = model_inputs$map, silent = TRUE)
+                        map = model_inputs$map, silent = F)
       
       # optimize
       optim = stats::nlminb(model$par, model$fn, model$gr,  
@@ -149,6 +148,7 @@ for(r in 1:length(re_model)) {
       
       growth_all = rbind(growth_all, growth_df)
       sd_rep_all = rbind(sd_rep_summary, sd_rep_all)
+      
       if(y == 0 & re_model[r] == "3dar1") {
         save(model, file =  here(dir.out, paste("length", sex_names[s], "3DAR1_Model.RData", sep = "_"))) # save model
       } # save model for terminal
@@ -160,3 +160,14 @@ for(r in 1:length(re_model)) {
 write.csv(growth_all, here(dir.out, "Growth_estimates.csv"))
 write.csv(sd_rep_all, here(dir.out, "SDRep_estimates.csv"))
 
+# growth_df %>% 
+#   ggplot(aes(x = Year, y = Mean, ymin = lwr_95, ymax = upr_95, color = factor(Age))) +
+#   geom_line(size = 1) +
+#   facet_wrap(~Sex) +
+#   labs(x = "Year", y = "Length-at-age", fill = "Age", color = "Age")
+# 
+# growth_df %>% 
+# ggplot(aes(x = Age, y = Mean, ymin = lwr_95, ymax = upr_95, color = factor(Year))) +
+#   geom_line(size = 1) +
+#   facet_wrap(~Sex) +
+#   labs(x = "Age", y = "Length-at-age", fill = "Age", color = "Age")

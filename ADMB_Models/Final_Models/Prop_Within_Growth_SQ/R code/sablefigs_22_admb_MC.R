@@ -24,7 +24,7 @@ SA_prev_YR<-2022 #### enter terminal year for previous stock assessment model
 
 dir_R<-here()
 # setwd('Prop_Within_Growth_SQ')
-dir_master<-here("Prop_Within_Growth_SQ")
+dir_master<-here("/Users/matthewcheng/Desktop/Side projects/Sable_Growth/ADMB_Models/Final_Models/Prop_Within_Growth_SQ")
 dir_results<-paste0(dir_master,"//Results",sep='')
 dir.create(dir_results)
 

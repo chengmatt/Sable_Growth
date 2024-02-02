@@ -41,18 +41,32 @@ sexes = unique(age_dat$Sex_name) # sex names
 # Filter to model data
 mod_df = age_dat %>% 
   filter(!Age %in% c(0, 1)) %>% 
-  mutate(Age = ifelse(Age >= 31, 31, Age), # collapse ages to + group
-         Year = Year - min(Year)) %>% 
-  select(Sex_name, Length, Weight, Age, Year, Haul) %>% 
+  mutate(Age = ifelse(Age >= 31, 31, Age)) %>% 
   mutate(Read_Age = Age) %>% 
-  rename(Tester_Age = Age) 
+  select(Sex_name, Length, Weight, Age, Year, Haul, `Geographic Area Name`, Read_Age) %>% 
+  rename(Tester_Age = Age, Area_Name = `Geographic Area Name`)
 
-# Bootstrap procedure -----------------------------------------------------
+# Read in catch data
+cat_dat = readxl::read_xlsx(here("data", "Area Stratum RPN.xlsx"), skip = 12)
 
-iters = 2000
+# Munge to get RPN proportions to weight age-length key
+cat_prop = cat_dat %>% 
+  select(Year, RPN, `Geographic Area Name`) %>% 
+  group_by(Year, `Geographic Area Name`) %>% 
+  summarize(RPN = sum(RPN, na.rm = T)) %>% # summing RPNs
+  rename(Area_Name = `Geographic Area Name`) %>% 
+  mutate(RPN = RPN + 0.01) # adding 1 so some samples have some weights
+
+# Left join weight proportion dataframe
+cat_age_df = mod_df %>% 
+  left_join(cat_prop, by = c("Year", "Area_Name")) %>% 
+  mutate(Year = Year - min(Year))
+
+# Bootstrap ---------------------------------------------------------------
+
+iters = 2e3
 age_bins = 2:31
-years = sort(unique(mod_df$Year))
-boot_all = data.frame()
+years = sort(unique(cat_age_df$Year))
 
 # progress bar
 pb <- txtProgressBar(max = iters, style = 3)
@@ -61,43 +75,58 @@ opts <- list(progress = progress)
 
 boot_all = foreach(iter = 1:iters, .packages = c("TMB", "here", "tidyverse"),
                    .options.snow = opts) %dopar% {
-# for(iter in 1:iters) {
-  resamp_all = data.frame()
-  for(y in 1:length(years)) { # resample specimens
-    yrhaul_df = mod_df %>% filter(Year == years[y]) %>% select(Haul) %>% distinct()
-    # boot_hauls = sample(yrhaul_df$Haul, length(yrhaul_df$Haul), replace = TRUE)
-    boot_hauls = yrhaul_df$Haul # specify hauls to saple from
-    for(b in 1:length(boot_hauls)) { # second stage resampling specimens
-      yrspec_haul_df =  mod_df %>% filter(Year == years[y], Haul == boot_hauls[b])
-      resamp = sample_n(yrspec_haul_df, nrow(yrspec_haul_df), replace = TRUE)
-      for(a in 1:nrow(resamp)) {
-        read_age = resamp[a,]$Read_Age # get reader age
-        prob_tester_ages = ageage_mat[,read_age-1] # get probabilities from tester ages
-        resamp[a,]$Tester_Age = sample(age_bins, 1, prob = prob_tester_ages)
-      } # end ageing error loop
-      resamp_all = rbind(resamp_all, resamp)
-    } # end b
-  } # end y
-  resamp_all %>% mutate(boot_iter = iter)
-} # end foreach loop
+                     
+ boot_waa_all = data.frame() # reset after every bootstrap
+ 
+ for(y in 1:length(years)) { # resample specimens
+   
+   resamp_df = data.frame() # reset resampling in each year
+   # Get hauls for a given year
+   yrhaul_df = cat_age_df %>% filter(Year == years[y]) %>% select(Haul) %>% distinct()
+   boot_hauls = sample(yrhaul_df$Haul, length(yrhaul_df$Haul), replace = TRUE) # resample hauls
+   boot_hauls = yrhaul_df$Haul # specify hauls to saple from
+   
+   # Bootstrap hauls for specimens
+   for(b in 1:length(boot_hauls)) { # second stage resampling specimens
+     
+     yrspec_haul_df =  cat_age_df %>% filter(Year == years[y], Haul == boot_hauls[b]) # get specimens to resample from
+     resamp = sample_n(yrspec_haul_df, nrow(yrspec_haul_df), replace = TRUE) # resample specimens
+     
+     for(a in 1:nrow(resamp)) { # resample using ageing error key
+       
+       read_age = resamp[a,]$Read_Age # get reader age
+       prob_tester_ages = ageage_mat[,read_age-1] # get probabilities from tester ages
+       resamp[a,]$Tester_Age = sample(age_bins, 1, prob = prob_tester_ages)
+       
+     } # end ageing error loop
+     
+     resamp_df = rbind(resamp_df, resamp)
+     
+   } # end b
+   
+   # Do density weighting process here
+   waa_df = resamp_df %>% 
+     select(Tester_Age, Weight, RPN, Sex_name) %>%
+     group_by(Tester_Age, Sex_name) %>%
+     mutate(prop = RPN/sum(RPN))  %>% # get weights for each length and age
+     group_by(Tester_Age, Sex_name) %>% 
+     summarize(mean_Weight = sum(Weight * prop)) %>%  # do weighted average to get the mean
+     mutate(Year = years[y])
+
+   boot_waa_all = rbind(boot_waa_all, waa_df)
+ } # end y
+ 
+ boot_waa_all %>% mutate(boot_iter = iter) # output this
+                     
+ } # end foreach loop
 
 boot_df = data.table::rbindlist(boot_all) # rbindlist everything
 
-
-# Summarize bootstrap -----------------------------------------------------
-
-ewaa = boot_df %>% 
-  group_by(Tester_Age, Year, Sex_name, boot_iter) %>% 
-  summarize(mean = mean(Weight)) 
-
-ewaa_summary = ewaa %>% 
+ewaa_summary = boot_df %>% 
   group_by(Tester_Age, Year, Sex_name) %>%
-  summarize(log_sd = sd(log(mean), na.rm = T),
-            sd = sd(mean, na.rm = T),
-            mean = mean(mean, na.rm = T))
-
-
-# Plot Bootstrap ----------------------------------------------------------
+  summarize(log_sd = sd(log(mean_Weight), na.rm = T),
+            sd = sd(mean_Weight, na.rm = T),
+            mean = mean(mean_Weight, na.rm = T))
 
 pdf(here(dir.figs, "Mean_WAA.pdf"))
 ggplot(ewaa_summary, aes(x = Year, y = mean, color = factor(Tester_Age))) +
@@ -116,6 +145,4 @@ ggplot(ewaa_summary, aes(x = Year, y = log_sd, color = Sex_name)) +
   theme(legend.position = "top")+
   labs(x = "Year", y = "logSD on WAA", color = "Sex")
 dev.off()
-
 write.csv(ewaa_summary, here("output", "ewaa.csv"))
-# write.csv(boot_df, here("output", "ewaa_boot.csv"))

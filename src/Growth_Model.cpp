@@ -175,10 +175,8 @@ Type objective_function<Type>::operator() ()
     for(int a = 0; a < n_ages; a++){
       for(int y = 0; y < n_years; y++) {
         if(growth_model == 1) {
-          mu_at(a,y) = X_inf - (X_inf-Lmin)*exp(-k*Type(ages(a))); // vonB LAA  (Lmin here is t0)
+          mu_at(a,y) = X_inf - (X_inf-Lmin)*exp(-k*Type(a)); // vonB LAA  (Lmin here is t0)
           mu_at(a,y) *= exp(ln_eps_at(a, y)); // add devs
-          obs_sigma_at(a,y) = exp(ln_obs_sigma2(0)) + (((mu_at(a,y) - mu_at(0,y)) / (X_inf - mu_at(0,y))) *
-                              (exp(ln_obs_sigma2(1)) - exp(ln_obs_sigma2(0))) ); // linear interpolation for variance
         } // LAA model
         if(growth_model == 2) {
           mu_at(a,y) = X_inf - (X_inf-Lmin)*exp(-k*Type(ages(a))); // LAA Parametric form
@@ -190,12 +188,24 @@ Type objective_function<Type>::operator() ()
   
   // Minimize observations (LAA)
   if(growth_model == 1) {
+    
+    // Get variance using linear interpolation
+    for(int a = 0; a < n_ages; a++){
+      for(int y = 0; y < n_years; y++) {
+        // obs_sigma_at(a,y) = exp(ln_obs_sigma2(0)) + (((mu_at(a,y) - mu_at(0,y)) / // linear interpolation for variance
+        //                    (X_inf - mu_at(0,y))) * (exp(ln_obs_sigma2(1)) - exp(ln_obs_sigma2(0))) ); 
+        obs_sigma_at(a,y) = exp(ln_obs_sigma2(0)) * mu_at(a,y); // CV
+      } // end y
+    } // end a
+    
+    // Likelihood function here
     for(int i = 0; i < obs_mat.rows(); i++) {
       // Extract quantities
       int a = CppAD::Integer(obs_mat(i, 2)); // extract observed age index for a given observation
       int y = CppAD::Integer(obs_mat(i, 3)); // extract year index for a given observation
       Type obs_lens = obs_mat(i,0); // get observed lengths
       Type obs_wts = obs_mat(i,1); // get observed weights
+      
       // Minimize observation likelihoods
       jnLL -= dnorm(obs_lens, mu_at(a,y), obs_sigma_at(a, y), true); // minimize for lengths (normal)
     } // end i loop

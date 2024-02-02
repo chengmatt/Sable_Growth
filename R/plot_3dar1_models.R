@@ -66,7 +66,7 @@ laa_ts %>%
   geom_line(size = 1) +
   geom_ribbon(alpha = 0.3, color = NA) +
   facet_wrap(~Age, scales = "free") +
-  theme_trevor_jordan() +
+  # theme_trevor_jordan() +
   scale_color_manual(values = c("orange", "black")) +
   scale_fill_manual(values = c("orange", "black")) +
   labs(x = "Year", y = "Length-at-age (Females)", fill = "Model", color = "Model")
@@ -110,7 +110,7 @@ waa_ts %>%
 
 dev.off()
 
-pdf(here(dir.figs, "TS_OnePlot.pdf"), width = 15, height = 13)
+pdf(here(dir.figs, "TS_OnePlot.pdf"), width = 10, height = 10)
 laa_ts %>% 
   filter(peel == 0, re_model == "3dar1") %>% 
   ggplot(aes(x = Year, y = Mean, ymin = lwr_95, ymax = upr_95, color = factor(Age))) +
