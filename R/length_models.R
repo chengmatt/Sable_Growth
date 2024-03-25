@@ -101,7 +101,7 @@ for(r in 1:length(re_model)) {
       sd_rep_summary = reshape2::melt(summary(model$sd_rep))
       
       # some residual data munging
-      sd_rep_summary = sd_rep_summary %>% filter(!Var1 %in% c("ln_eps_at", "mu_at")) %>% 
+      sd_rep_summary = sd_rep_summary %>% filter(!Var1 %in% c("ln_eps_at", "mu_at", "mu_t")) %>% 
         rename(Parameter = Var1, Type = Var2) %>% 
         mutate(peel = y, Convergence = model$Convergence,
                re_Model = re_model[r], Sex = sex_names[s],

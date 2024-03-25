@@ -3188,8 +3188,8 @@ FUNCTION Get_Population_Projection
    N_proj_f(endyr+1,nages)  = value(natage_f(endyr,nages-1))*value(S_f(endyr,nages-1))+ value(natage_f(endyr,nages))*value(S_f(endyr,nages));
    N_proj_m(endyr+1,nages)  = value(natage_m(endyr,nages-1))*value(S_m(endyr,nages-1))+ value(natage_m(endyr,nages))*value(S_m(endyr,nages));
 
-   spawn_biom_proj(endyr+1) = elem_prod(N_proj_f(endyr+1),pow(mfexp(-yieldratio*FABC_tot_proj_f-value(natmort)),spawn_fract)) * weight_maturity_prod_f(endyr);
-   tot_biom_proj(endyr+1)   = N_proj_f(endyr+1)*weight_f(endyr)+N_proj_m(endyr+1)*weight_m(endyr);
+   spawn_biom_proj(endyr+1) = elem_prod(N_proj_f(endyr+1),pow(mfexp(-yieldratio*FABC_tot_proj_f-value(natmort)),spawn_fract)) * ((weight_maturity_prod_f(endyr) + weight_maturity_prod_f(endyr-1) + weight_maturity_prod_f(endyr-2) + weight_maturity_prod_f(endyr-3) + weight_maturity_prod_f(endyr-4)) / 5);
+   tot_biom_proj(endyr+1)   = N_proj_f(endyr+1)*((weight_f(endyr) + weight_f(endyr-1) + weight_f(endyr-2) + weight_f(endyr-3) + weight_f(endyr-4)) / 5)+N_proj_m(endyr+1)*((weight_m(endyr) + weight_m(endyr-1) + weight_m(endyr-2) + weight_m(endyr-3) + weight_m(endyr-4)) / 5);
    
   for (i=endyr+1;i<=endyr+15;i++)
    {
@@ -3246,8 +3246,8 @@ FUNCTION Get_Population_Projection
       catage_proj_OFL_m(i,j) = yieldratio*N_proj_m(i,j)* FOFL_tot_proj_m(j)/ZOFL_proj_m(j)*(1.-mfexp(-ZOFL_proj_m(j)));
      }
      
-      pred_catch_proj(i)     = (catage_proj_f(i)*weight_f(endyr)+catage_proj_m(i)*weight_m(endyr))/yieldratio;
-      pred_catch_proj_OFL(i) = (catage_proj_OFL_f(i)*weight_f(endyr)+catage_proj_OFL_m(i)*weight_m(endyr))/yieldratio;
+      pred_catch_proj(i)     = (catage_proj_f(i)*((weight_f(endyr) + weight_f(endyr-1) + weight_f(endyr-2) + weight_f(endyr-3) + weight_f(endyr-4)) / 5)+catage_proj_m(i)*((weight_m(endyr) + weight_m(endyr-1) + weight_m(endyr-2) + weight_m(endyr-3) + weight_m(endyr-4)) / 5))/yieldratio;
+      pred_catch_proj_OFL(i) = (catage_proj_OFL_f(i)*((weight_f(endyr) + weight_f(endyr-1) + weight_f(endyr-2) + weight_f(endyr-3) + weight_f(endyr-4)) / 5)+catage_proj_OFL_m(i)*((weight_m(endyr) + weight_m(endyr-1) + weight_m(endyr-2) + weight_m(endyr-3) + weight_m(endyr-4)) / 5))/yieldratio;
 
 //  Next year's abundance
     if (i < endyr+15)
@@ -3277,8 +3277,8 @@ FUNCTION Get_Population_Projection
        N_proj_f(i+1,nages)   = N_proj_f(i,nages-1)* mfexp(-yieldratio*FABC_tot_proj_f(nages-1)-value(natmort))+ N_proj_f(i,nages)   * mfexp(-yieldratio*FABC_tot_proj_f(nages)-value(natmort));
        N_proj_m(i+1,nages)   = N_proj_m(i,nages-1)* mfexp(-yieldratio*FABC_tot_proj_m(nages-1)-value(natmort))+ N_proj_m(i,nages)   * mfexp(-yieldratio*FABC_tot_proj_m(nages)-value(natmort));
 
-       spawn_biom_proj(i+1)  = elem_prod(N_proj_f(i+1),pow(mfexp(-yieldratio*FABC_tot_proj_f-value(natmort)),spawn_fract)) * weight_maturity_prod_f(endyr);  // Right way
-       tot_biom_proj(i+1)    = N_proj_f(i+1)*weight_f(endyr)+N_proj_m(i+1)*weight_m(endyr);
+       spawn_biom_proj(i+1)  = elem_prod(N_proj_f(i+1),pow(mfexp(-yieldratio*FABC_tot_proj_f-value(natmort)),spawn_fract)) * ((weight_maturity_prod_f(endyr) + weight_maturity_prod_f(endyr-1) + weight_maturity_prod_f(endyr-2) + weight_maturity_prod_f(endyr-3) + weight_maturity_prod_f(endyr-4)) / 5);  // Right way
+       tot_biom_proj(i+1)    = N_proj_f(i+1)*((weight_f(endyr) + weight_f(endyr-1) + weight_f(endyr-2) + weight_f(endyr-3) + weight_f(endyr-4)) / 5)+N_proj_m(i+1)*((weight_m(endyr) + weight_m(endyr-1) + weight_m(endyr-2) + weight_m(endyr-3) + weight_m(endyr-4)) / 5);
 
     }  // end if statement for not in terminal year
   }    // end year for statement
@@ -3312,7 +3312,7 @@ FUNCTION Evaluate_Objective_Function
   rec_like_bias_adj.initialize();
   Surv_Likelihood();                                  // Likelihood function for survey biomass
   ssqcatch  +=  wt_ssqcatch_fish1 *norm2(log(obs_catch_fish1+0.01)-log(pred_catch_fish1+0.01));
-  ssqcatch  +=  wt_ssqcatch_fish3 *norm2(log(obs_catch_fish3+0.8)-log(pred_catch_fish3+0.8));
+  ssqcatch  +=  wt_ssqcatch_fish3 *norm2(log(obs_catch_fish3+0.01)-log(pred_catch_fish3+0.01));
 
   // Calculate sex ratios here
   for (i=1; i <= nyrs_fish1_age; i++) {

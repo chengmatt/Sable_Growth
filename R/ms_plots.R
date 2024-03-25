@@ -38,7 +38,10 @@ ages = 2:31
 lengths = seq(41,99,2)
 
 # Read in results
+source(here("R", "functions.R"))
 model_path <- here("ADMB_Models", "Final_Models")
+sq_df <- dget(here(model_path, "Prop_Within_Growth_SQ", "tem.rdat"))
+gv_df <- dget(here(model_path, "Prop_Within_Growth_Vary", "tem.rdat"))
 gv_par <- R2admb::read_pars(fn = here(model_path, "Prop_Within_Growth_Vary","tem"))
 sq_par <- R2admb::read_pars(fn = here(model_path, "Prop_Within_Growth_SQ","tem"))
 
@@ -95,6 +98,7 @@ ssb_plot = ggplot(ssb_df %>% filter(Year <= 2023), aes(x = Year, y = ssb, color 
                                                        ymin = downr, ymax = upr, fill = type)) +
   geom_ribbon(alpha = 0.35, color = NA) +
   geom_line(aes(color = type), size = 1.3) +
+  geom_hline(aes(yintercept = b40, color = type), lty = 2, size = 1.3) +
   theme_reg() +
   theme(legend.position = c(0.88, 0.85)) +
   scale_color_manual(values = c("#0072B2", "#D55E00")) +
@@ -102,9 +106,10 @@ ssb_plot = ggplot(ssb_df %>% filter(Year <= 2023), aes(x = Year, y = ssb, color 
   labs(x = "Year", y = "Spawning Biomass (kt)", color = "Model", fill = "Model")
 
 rec_plot = ggplot(rec_df %>% filter(Year %in% c(1960:2023)), 
-       aes(x = Year - 2, y = rec, ymin = downr, ymax = upr, fill = type)) +
+       aes(x = Year, y = rec, ymin = downr, ymax = upr, fill = type)) +
   geom_line(aes(color = type), size = 1.3) +
   geom_ribbon(alpha = 0.35) +
+  geom_hline(aes(yintercept = meanrec, color = type), lty = 2, size = 1.3) +
   theme_reg() +
   scale_color_manual(values = c("#0072B2", "#D55E00")) +
   scale_fill_manual(values = c("#0072B2", "#D55E00")) +
@@ -120,13 +125,21 @@ abc_plot = ggplot(abc_df, aes(x = type, y = coeff, ymin = downr, ymax = upr, col
   scale_fill_manual(values = c("#0072B2", "#D55E00")) +
   theme(legend.position = "none")
 
-pdf(here("figs", "ms_figs", "stock_status.pdf"), width = 10, height = 8)
+pdf(here("figs", "ms_figs", "stock_status.pdf"), width = 9, height = 8)
 ab = ggarrange(ssb_plot, rec_plot, ncol = 1, labels = c('', "B"), 
                font.label = list(size = 25), hjust = -0.3, vjust = 1.3)
 ggarrange(ab, abc_plot, widths = c(0.7, 0.3), labels = c('A', "C"),
           font.label = list(size = 25), hjust = -0.3, vjust = 1.3)
 dev.off()
 
+# Look at mean differences in recruitment
+rec_df %>% 
+  # mutate(Year = Year - 2) %>% 
+  filter(Year %in% c(2016:2022)) %>% 
+  select(Year, type, rec) %>% 
+  pivot_wider(names_from = "type", values_from = "rec") %>% 
+  mutate(Diff = (`Growth Vary` - `Growth SQ`)  ) %>% 
+  summarize(mean = mean(Diff))
 
 # Anomaly Plot ------------------------------------------------------------
 
@@ -206,5 +219,83 @@ female_plot = waa_ts %>% filter(Sex == "female",
 pdf(here("figs", "ms_figs", "cohort_plot.pdf"), width = 17, height = 8)
 ggarrange(female_plot, male_plot, ncol = 2, labels = c('A', "B"), 
           font.label = list(size = 25), hjust = -0.6)
+dev.off()
+
+
+# Compare input differences -----------------------------------------------------
+# Size Transition Differences ---------------------------------------------
+age_bins = 2:31
+len_bins = seq(41, 99, 2)
+al_mat_all_df = data.frame()
+years = unique(waa_ts$Year)
+n_proj_years = 1
+# extract out length models
+length_models = list.files(here("output", "LAA_Models"))
+length_models = length_models[str_detect(length_models, ".RData")]
+
+# Get size transition matrix
+for(i in 1:length(length_models)) {
+  load(here("output", "LAA_Models", paste(length_models[i], sep = "")))
+  # Extract out quantities
+  laa_sigma = model$rep$obs_sigma_at
+  laa_mat = matrix(model$sd_rep$value[names(model$sd_rep$value) == "mu_at"],
+                   nrow = length(age_bins), ncol = length(years) )
+  # Set up array
+  al_array = array(data = 0, dim = c(length(age_bins), length(len_bins), ncol(laa_mat)),
+                   dimnames = list(c(age_bins), c(len_bins), c(sort(years)) ))
+  
+  for(t in 1:ncol(laa_mat)) { # loop through time to get matrix
+    al_array[,,t] = get_al_trans_matrix(age_bins = 2:31, len_bins = seq(41, 99, 2), 
+                                        mean_length = laa_mat[,t], sd = laa_sigma[,t])
+  } # end t loop
+
+  # naming and mungingz
+  al_df = reshape2::melt(al_array)
+  names(al_df) = c("Age", "Length", "Year", "Value")
+  al_df$sex = str_split(length_models[i], "_")[[1]][2]
+  al_mat_all_df = rbind(al_mat_all_df, al_df)
+  
+} # end t loop
+
+# Get status-quo values
+# females
+al_sq_f_mat <- sq_df$sizeage.f.block2
+colnames(al_sq_f_mat) <- seq(41,99,2)
+rownames(al_sq_f_mat) <- 2:31
+al_sq_f <- reshape2::melt(al_sq_f_mat)
+colnames(al_sq_f) = c("Age", "Length", "Ref")
+al_sq_f$sex = "female" 
+
+# males
+al_sq_m_mat <- sq_df$sizeage.m.block2
+colnames(al_sq_m_mat) <- seq(41,99,2)
+rownames(al_sq_m_mat) <- 2:31
+al_sq_m <- reshape2::melt(al_sq_m_mat)
+colnames(al_sq_m) = c("Age", "Length", "Ref")
+al_sq_m$sex = "Male" 
+
+# combine
+al_sq <- rbind(al_sq_f, al_sq_m)
+
+# compute relative differences
+al_rel_diff <- al_mat_all_df %>% 
+  left_join(al_sq, by = c("sex", "Length", "Age")) %>% 
+  mutate(Anom = (Value - Ref))
+val_range <- range(al_rel_diff$Anom)
+
+
+### Plot AL Matrix Comparison -----------------------------------------------
+
+pdf(here("figs", "ms_figs", "AL_comp_plot.pdf"), width = 14)
+print(
+  ggplot(al_rel_diff %>% filter(Age %in% c(2:6)) %>% 
+           mutate(sex = ifelse(sex == "female", "Female", "Male"))) +
+    geom_line(aes(x = Length,  y = Value, color = Year, group = Year), size = 1, alpha = 0.5) +
+    geom_line(aes(x = Length,  y = Ref), lty = 2, size = 1.3) +
+    scale_color_viridis_c() +
+    facet_grid(sex~Age) +
+    labs(x = "Length (cm)", y = "Probability", color = "Year") +
+    theme_reg() 
+)
 dev.off()
 

@@ -156,6 +156,7 @@ Type objective_function<Type>::operator() ()
   int total_n = n_years * n_ages; // integer for nyears * nages
   Eigen::SparseMatrix<Type> Q_sparse(total_n, total_n); // Precision matrix for GMRF
   matrix<Type> mu_at(n_ages, n_years); // storage for weight or length at age over time
+  vector<Type> mu_t(n_years); // storage for mean weight or length over time
   matrix<Type> obs_sigma_at(n_ages, n_years); // storage for length at age sigma mover time
   Type jnLL = 0; // storage for joint nLL
   
@@ -172,19 +173,21 @@ Type objective_function<Type>::operator() ()
                          rho_y, rho_a, rho_c, ln_eps_sigma2, var_param);
   
   // Get predicted length-at-age or weight-at-age
+  for(int y = 0; y < n_years; y++) {
     for(int a = 0; a < n_ages; a++){
-      for(int y = 0; y < n_years; y++) {
-        if(growth_model == 1) {
+      if(growth_model == 1) {
           mu_at(a,y) = X_inf - (X_inf-Lmin)*exp(-k*Type(a)); // vonB LAA  (Lmin here is t0)
           mu_at(a,y) *= exp(ln_eps_at(a, y)); // add devs
         } // LAA model
-        if(growth_model == 2) {
+      if(growth_model == 2) {
           mu_at(a,y) = X_inf - (X_inf-Lmin)*exp(-k*Type(ages(a))); // LAA Parametric form
           mu_at(a,y) = alpha * pow(mu_at(a,y), beta); // LW conversion
           mu_at(a,y) *= exp(ln_eps_at(a, y)); // add devs
         } // Weight model
-      } // end y loop
-    } // end a loop
+      } // end a loop
+    // Get mean weight or length over time
+    mu_t(y) = mu_at.col(y).sum()/n_ages; 
+    } // end y loop
   
   // Minimize observations (LAA)
   if(growth_model == 1) {
@@ -241,6 +244,7 @@ Type objective_function<Type>::operator() ()
 
   // REPORT SECTION 
   ADREPORT(mu_at);
+  ADREPORT(mu_t);
   REPORT(Q_sparse);
   REPORT(obs_sigma_at);
     

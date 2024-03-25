@@ -47,14 +47,14 @@ tem_2023_na_wh.dat
 1045.6
 
 Iterative_Weights_Likelihoods  
-0.688614 51.038 Fishery_Age_Composition_Likelihood
-4.70201 303.795 Survey_Age_Composition_Likelihood_DomesticLL
-1.27276 31.8505 Survey_Age_Composition_Likelihood_CooperativeLL
-2.46005 96.9789 Fishery_Size_Composition_Likelihood_Fixed
-0.335958 23.837 Fishery_Size_Composition_Likelihood_Trawl
+0.688615 51.0381 Fishery_Age_Composition_Likelihood
+4.70201 303.796 Survey_Age_Composition_Likelihood_DomesticLL
+1.27274 31.8502 Survey_Age_Composition_Likelihood_CooperativeLL
+2.46004 96.9785 Fishery_Size_Composition_Likelihood_Fixed
+0.335956 23.8369 Fishery_Size_Composition_Likelihood_Trawl
 2.69866 213.923 Survey_Size_Composition_Likelihood_Domestic LL
-1.73091 33.9366 Survey_Size_Composition_Likelihood_Cooperative_LL
-1.13335 38.4556 Survey_Size_Composition_Likelihood_GOATrawl
+1.73091 33.9367 Survey_Size_Composition_Likelihood_Cooperative_LL
+1.13336 38.4558 Survey_Size_Composition_Likelihood_GOATrawl
  ************   Some more parameter estimates and their SDs ************
 Parameter Phases
 ph_mean_rec ph_recdev ph_Rzero ph_steepness ph_sigr
@@ -1102,14 +1102,14 @@ Wts_n_Likelihoods
 50 64.8505 SSQ_Catch_Likelihood
 0.448 80.3047 Domestic_Survey_Abundance_Index_Likelihood
 0.448 38.5278 Cooperative_Survey_Abundance_Index_Likelihood
-7.8 51.038 Fishery_Age_Composition_Likelihood
-7.95 303.795 Survey_Age_Composition_Likelihood_DomesticLL
-7.95 31.8505 Survey_Age_Composition_Likelihood_CooperativeLL
-1 96.9789 Fishery_Size_Composition_Likelihood_Fixed
-4.1 23.837 Fishery_Size_Composition_Likelihood_Trawl
+7.8 51.0381 Fishery_Age_Composition_Likelihood
+7.95 303.796 Survey_Age_Composition_Likelihood_DomesticLL
+7.95 31.8502 Survey_Age_Composition_Likelihood_CooperativeLL
+1 96.9785 Fishery_Size_Composition_Likelihood_Fixed
+4.1 23.8369 Fishery_Size_Composition_Likelihood_Trawl
 1 213.923 Survey_Size_Composition_Likelihood_Domestic LL
-1 33.9366 Survey_Size_Composition_Likelihood_Cooperative_LL
-7.25 38.4556 Survey_Size_Composition_Likelihood_GOATrawl
+1 33.9367 Survey_Size_Composition_Likelihood_Cooperative_LL
+7.25 38.4558 Survey_Size_Composition_Likelihood_GOATrawl
 1.5 25.2692 Recruitment_Deviations_Likelihood
 10 0 Fish_sel_Regularity_Penalty  
 10 0 Surv_sel_Regularity_Penalty  
@@ -1135,12 +1135,12 @@ Stock-recruitment, type: 3 1=Ricker, 2=B-Holt, 3=Mean
 Year SSB SR_Pred R_Est 
 Weighted likelihods for comps broken down
 Fish1 Age, Survey 1 Age, Fish 1 Size Female, Fish 1 Size Male, Fish 2 Size, Fish3 Size Female, F3 Size Male, Srv1 Size F, Srv1 Size M, Srv2 Size F, Srv2 Size M, Srv7 Size F, Srv7 Size M
- 51.038 303.795 96.9789 0 0 23.837 0 0 213.923 0 33.9366 0 38.4556 0 0 31.8505 age _like
+ 51.0381 303.796 96.9785 0 0 23.8369 0 0 213.923 0 33.9367 0 38.4558 0 0 31.8502 age _like
  0 0 80.3047 38.5278 15.0707 32.7432 20.2856 0 surv like 
  0 0 0 0 0 0 0 0 0 0 0 0 sel_like
 Unweighted likelihods for comps broken down
 Fish1 Age, Survey 1 Age, Fish 1 Size Female, Fish 1 Size Male, Fish 2 Size, Fish3 Size Female, F3 Size Male, Srv1 Size F, Srv1 Size M, Srv2 Size F, Srv2 Size M, Srv7 Size F, Srv7 Size M
-6.54333 38.2132 96.978 9.9999e-05 10 5.81392 2.43902e-05 10 213.921 9.9999e-05 33.9364 9.9999e-05 5.30422 1.37931e-05 10 4.00636 unw_age)_like
+6.54334 38.2132 96.9777 9.9999e-05 10 5.81389 2.43902e-05 10 213.921 9.9999e-05 33.9364 9.9999e-05 5.30425 1.37931e-05 10 4.00632 unw_age)_like
 0 0 179.247 85.9977 33.6392 73.0858 45.2796 10 unw_surv_like 
  0 0 0 0 0 0 0 0 0 0 0 0 sel_like
 Survey Biomass 2

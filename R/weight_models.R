@@ -10,7 +10,7 @@ library(TMBhelper)
 library(here)
 library(tidyverse)
 
-# setwd("src")
+setwd("src")
 TMB::compile("Growth_Model.cpp")
 dyn.unload(dynlib("Growth_Model"))
 dyn.load(dynlib('Growth_Model'))
@@ -100,7 +100,7 @@ for(r in 1:length(re_model)) {
       sd_rep_summary = reshape2::melt(summary(model$sd_rep))
       
       # some residual data munging
-      sd_rep_summary = sd_rep_summary %>% filter(!Var1 %in% c("ln_eps_at", "mu_at")) %>% 
+      sd_rep_summary = sd_rep_summary %>% filter(!Var1 %in% c("ln_eps_at", "mu_at", "mu_t")) %>% 
         rename(Parameter = Var1, Type = Var2) %>% 
         mutate(peel = y, Convergence = model$Convergence,
                re_Model = re_model[r], Sex = sex_names[s],
@@ -159,4 +159,3 @@ for(r in 1:length(re_model)) {
 
 write.csv(growth_all, here(dir.out, "Growth_estimates.csv"))
 write.csv(sd_rep_all, here(dir.out, "SDRep_estimates.csv"))
-

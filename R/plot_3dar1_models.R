@@ -521,4 +521,3 @@ print(
     theme_trevor_jordan() 
 )
 dev.off()
-
