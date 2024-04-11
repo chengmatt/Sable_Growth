@@ -13,6 +13,15 @@ theme_reg = function() {
           strip.text = element_text(size = 12))
 }
 
+integer_breaks <- function(n = 5, ...) {
+  fxn <- function(x) {
+    breaks <- floor(pretty(x, n, ...))
+    names(breaks) <- attr(breaks, "labels")
+    breaks
+  }
+  return(fxn)
+}
+
 par_coeff <- function(df, coeff_ex, type) {
   
   # Extract them out!
@@ -105,8 +114,7 @@ ssb_plot = ggplot(ssb_df %>% filter(Year <= 2023), aes(x = Year, y = ssb, color 
   scale_fill_manual(values = c("#0072B2", "#D55E00")) +
   labs(x = "Year", y = "Spawning Biomass (kt)", color = "Model", fill = "Model")
 
-rec_plot = ggplot(rec_df %>% filter(Year %in% c(1960:2023)), 
-       aes(x = Year, y = rec, ymin = downr, ymax = upr, fill = type)) +
+rec_plot = ggplot(rec_df, aes(x = Year, y = rec, ymin = downr, ymax = upr, fill = type)) +
   geom_line(aes(color = type), size = 1.3) +
   geom_ribbon(alpha = 0.35) +
   geom_hline(aes(yintercept = meanrec, color = type), lty = 2, size = 1.3) +
@@ -132,21 +140,32 @@ ggarrange(ab, abc_plot, widths = c(0.7, 0.3), labels = c('A', "C"),
           font.label = list(size = 25), hjust = -0.3, vjust = 1.3)
 dev.off()
 
-# Look at mean differences in recruitment
+# Look at mean differences in recruitment (probably just distributing
+# age classes differently because of the age-length transition)
 rec_df %>% 
-  # mutate(Year = Year - 2) %>% 
-  filter(Year %in% c(2016:2022)) %>% 
-  select(Year, type, rec) %>% 
-  pivot_wider(names_from = "type", values_from = "rec") %>% 
-  mutate(Diff = (`Growth Vary` - `Growth SQ`)  ) %>% 
-  summarize(mean = mean(Diff))
+  group_by(type) %>% 
+  filter(Year %in% c(2016:2021)) %>%
+  summarize(mean = mean(rec))
+
+ggplot(rec_df %>% 
+         select(Year, type ,rec) %>% 
+         filter(Year != 2023) %>% 
+         pivot_wider(names_from = type, values_from = rec) %>% 
+         mutate(diff = (`Growth Vary` - `Growth SQ`) ), aes(x = Year, y = diff)) +
+  geom_line(size = 1) +
+  geom_point(size = 4) +
+  geom_hline(yintercept = 0, lty = 2) +
+  theme_reg() +
+  theme(legend.position = "none") +
+  labs(x = "Year", y = "Difference in Age-2 Recruitment (millions)", color = "Model", fill = "Model")
 
 # Anomaly Plot ------------------------------------------------------------
 
 # growth estimates here
-waa_ts = read.csv(here("output", "WAA_Models", "Growth_estimates.csv"))
-waa_sd = read.csv(here("output", "WAA_Models", "SDRep_estimates.csv"))
-sd_all = rbind(waa_sd)
+waa_ts <- read.csv(here("output", "WAA_Models", "Growth_estimates.csv")) %>% 
+  mutate(Sex = ifelse(Sex == "female", "Female", "Male"))
+laa_ts <- read.csv(here("output", "LAA_Models", "Growth_estimates.csv"))  %>% 
+  mutate(Sex = ifelse(Sex == "female", "Female", "Male"))
 
 # Calculate WAA anomaly
 const_waa_ts = waa_ts %>% filter(re_model == "constant", Year == 1996, peel == 0) %>% 
@@ -156,69 +175,142 @@ anom_waa = waa_ts %>% filter(re_model == "3dar1") %>%
   mutate(Anom = (Mean-Ref) / Ref,
          Sex = ifelse(Sex == "female", "Female", "Male"))
 
+# Calculate LAA anomaly
+const_laa_ts = laa_ts %>% filter(re_model == "constant", Year == 1996, peel == 0) %>% 
+  select(Age, Mean, Sex) %>% rename(Ref = Mean)
+anom_laa = laa_ts %>% filter(re_model == "3dar1") %>% 
+  left_join(const_laa_ts, by = c("Age", "Sex")) %>% 
+  mutate(Anom = (Mean-Ref) / Ref,
+         Sex = ifelse(Sex == "female", "Female", "Male"))
 
-pdf(here("figs", "ms_figs", "waa_anom.pdf"), width = 15, height = 7)
-ggplot(anom_waa %>% filter(peel == 0), 
-       aes(x = factor(Year), y = factor(Age), fill = Anom)) +
-  geom_tile(alpha = 1) +
-  scale_fill_gradient2(midpoint = mean(anom_waa$Anom), 
-                       high = scales::muted("red"), 
-                       low = scales::muted("blue")) +
-  facet_wrap(~Sex) +
-  scale_y_discrete(breaks = seq(3, 31, 3)) +
-  scale_x_discrete(breaks = seq(1996, 2023, 5)) +
-  theme_reg() +
-  theme(legend.key.width = unit(3, "cm")) +
-  labs(x = "Year", y = "Age", fill = "Weight Anomalies") +
-  theme(legend.position = "top")
-dev.off()
-
+# anom_waa_plot <- ggplot(anom_waa %>% filter(peel == 0, Year != 2023), 
+#                         aes(x = factor(Year), y = factor(Age), fill = Anom)) +
+#   geom_tile(alpha = 1) +
+#   scale_fill_gradient2(midpoint = mean(anom_waa$Anom), 
+#                        high = scales::muted("red"), 
+#                        low = scales::muted("blue")) +
+#   facet_wrap(~Sex, ncol = 1) +
+#   scale_y_discrete(breaks = seq(3, 31, 3)) +
+#   scale_x_discrete(breaks = seq(1996, 2023, 5)) +
+#   theme_reg() +
+#   theme(legend.key.width = unit(1, "cm")) +
+#   labs(x = "Year", y = "Age", fill = "Weight-at-age Anomalies") +
+#   theme(legend.position = "top")
+# 
+# anom_laa_plot <- ggplot(anom_laa %>% filter(peel == 0, Year != 2023), 
+#                         aes(x = factor(Year), y = factor(Age), fill = Anom)) +
+#   geom_tile(alpha = 1) +
+#   scale_fill_gradient2(midpoint = mean(anom_laa$Anom), 
+#                        high = scales::muted("red"), 
+#                        low = scales::muted("blue")) +
+#   facet_wrap(~Sex, ncol = 1) +
+#   scale_y_discrete(breaks = seq(3, 31, 3)) +
+#   scale_x_discrete(breaks = seq(1996, 2023, 5)) +
+#   theme_reg() +
+#   theme(legend.key.width = unit(1, "cm")) +
+#   labs(x = "Year", y = "Age", fill = "Length-at-age Anomalies") +
+#   theme(legend.position = "top")
+# 
+# pdf(here("figs", "ms_figs", "waa_anom.pdf"), width = 12, height = 5)
+# ggarrange(anom_waa_plot, anom_laa_plot, labels = c("A", "B"), 
+#           font.label = list(size = 25), vjust = 3.5)
+# dev.off()
 
 # Cohort Plot -------------------------------------------------------------
 
 # create ages at which large recruitment events were observed
-waa_ts = waa_ts %>% mutate(large_rec_age1 = (2014 - broodYear) + 2,
+waa_ts <- waa_ts %>% mutate(large_rec_age1 = (2014 - broodYear) + 2,
                            large_rec_age2 = (2016 - broodYear) + 2,
                            large_rec_age1 = ifelse(large_rec_age1 <= 1, NA, large_rec_age1),
                            large_rec_age2 = ifelse(large_rec_age2 <= 1, NA, large_rec_age2))
 
-male_plot = waa_ts %>% filter(Sex == "Male",
-                  broodYear %in% c(2010:2018), 
-                  Year != 2023,
-                  peel == 0) %>% 
-  ggplot(aes(x = Age, y = Mean, color = re_model, 
-             ymin = lwr_95, ymax = upr_95, fill = re_model), size = 1.3) +
-  geom_line(size = 1.3) +
-  geom_ribbon(alpha = 0.3, color = NA) +
-  facet_wrap(~broodYear, scale = "free") +
-  geom_vline(aes(xintercept = large_rec_age1), size = 0.9) +
-  geom_vline(aes(xintercept = large_rec_age2), lty = 2, size = 0.9) +
-  labs(x = "Age", y = "Male Weight (g)", fill = "Model", color = "Model") +
-  theme_reg() +
-  theme(legend.position = c(0.925, 0.085))  +
-  scale_color_manual(values = c("#005AB5", "black")) +
-  scale_fill_manual(values = c("#005AB5", "black")) 
+# create ages at which large recruitment events were observed
+laa_ts <- laa_ts %>% mutate(large_rec_age1 = (2014 - broodYear) + 2,
+                           large_rec_age2 = (2016 - broodYear) + 2,
+                           large_rec_age1 = ifelse(large_rec_age1 <= 1, NA, large_rec_age1),
+                           large_rec_age2 = ifelse(large_rec_age2 <= 1, NA, large_rec_age2))
 
-female_plot = waa_ts %>% filter(Sex == "female",
-                                broodYear %in% c(2010:2018), 
-                                Year != 2023,
-                  peel == 0) %>% 
-  ggplot(aes(x = Age, y = Mean, color = re_model, 
-             ymin = lwr_95, ymax = upr_95, fill = re_model), size = 1.3) +
-  geom_line(size = 1.3) +
-  geom_ribbon(alpha = 0.35, color = NA) +
-  facet_wrap(~broodYear, scale = "free") +
-  geom_vline(aes(xintercept = large_rec_age1), size = 0.9) +
-  geom_vline(aes(xintercept = large_rec_age2), lty = 2, size = 0.9) +
-  labs(x = "Age", y = "Female Weight (g)", fill = "Model", color = "Model") +
-  scale_color_manual(values = c("#DC3220", "black")) +
-  scale_fill_manual(values = c("#DC3220", "black")) +
+waa_plot <- ggplot() +
+  geom_line(waa_ts %>% filter(broodYear %in% c(2010:2018), Year != 2023, peel == 0, re_model == "3dar1"),
+            mapping = aes(x = Age, y = Mean, color = Sex), size = 1.3) +
+  geom_ribbon(waa_ts %>% filter(broodYear %in% c(2010:2018), Year != 2023, peel == 0, re_model == "3dar1"),
+              mapping = aes(x = Age, y = Mean, ymin = lwr_95, ymax = upr_95, fill = Sex), alpha = 0.3) +
+  geom_line(waa_ts %>% filter(broodYear %in% c(2010:2018), Year != 2023, peel == 0, re_model == "constant"),
+            mapping = aes(x = Age, y = Mean), size = 1.3, lty = 3) +
+  geom_vline(waa_ts %>% filter(broodYear %in% c(2010:2018), Year != 2023, peel == 0, re_model == "constant"), 
+             mapping = aes(xintercept = large_rec_age1), size = 0.75) +
+  geom_vline(waa_ts %>% filter(broodYear %in% c(2010:2018), Year != 2023, peel == 0, re_model == "constant"), 
+             mapping = aes(xintercept = large_rec_age2), lty = 2, size = 0.75) +
+  scale_x_continuous(breaks = integer_breaks()) +
+  facet_grid(Sex~broodYear, scale = "free") +
+  scale_color_manual(values = c("#DC3220", "#005AB5")) +
+  scale_fill_manual(values = c("#DC3220", "#005AB5")) +
+  labs(x = "Age", y = "Weight (g)", fill = "Sex", color = "Sex") +
   theme_reg() +
-  theme(legend.position = c(0.925, 0.085)) 
+  theme(legend.position = "none")
+
+laa_plot <- ggplot() +
+  geom_line(laa_ts %>% filter(broodYear %in% c(2010:2018), Year != 2023, peel == 0, re_model == "3dar1"),
+            mapping = aes(x = Age, y = Mean, color = Sex), size = 1.3) +
+  geom_ribbon(laa_ts %>% filter(broodYear %in% c(2010:2018), Year != 2023, peel == 0, re_model == "3dar1"),
+              mapping = aes(x = Age, y = Mean, ymin = lwr_95, ymax = upr_95, fill = Sex), alpha = 0.3) +
+  geom_line(laa_ts %>% filter(broodYear %in% c(2010:2018), Year != 2023, peel == 0, re_model == "constant"),
+            mapping = aes(x = Age, y = Mean), size = 1.3, lty = 3) +
+  geom_vline(laa_ts %>% filter(broodYear %in% c(2010:2018), Year != 2023, peel == 0, re_model == "constant"), 
+             mapping = aes(xintercept = large_rec_age1), size = 0.75) +
+  geom_vline(laa_ts %>% filter(broodYear %in% c(2010:2018), Year != 2023, peel == 0, re_model == "constant"), 
+             mapping = aes(xintercept = large_rec_age2), lty = 2, size = 0.75) +
+  scale_x_continuous(breaks = integer_breaks()) +
+  facet_grid(Sex~broodYear, scale = "free") +
+  scale_color_manual(values = c("#DC3220", "#005AB5")) +
+  scale_fill_manual(values = c("#DC3220", "#005AB5")) +
+  labs(x = "Age", y = "Length (cm)", fill = "Sex", color = "Sex") +
+  theme_reg() +
+  theme(legend.position = c(0.95, 0.35))
   
-pdf(here("figs", "ms_figs", "cohort_plot.pdf"), width = 17, height = 8)
-ggarrange(female_plot, male_plot, ncol = 2, labels = c('A', "B"), 
+pdf(here("figs", "ms_figs", "cohort_plot.pdf"), width = 13, height = 8)
+ggarrange(waa_plot, laa_plot, ncol = 1,
+          labels = c('A', "B"),
           font.label = list(size = 25), hjust = -0.6)
+dev.off()
+
+
+
+# Time Series Plot --------------------------------------------------------
+
+waa_ts_plot <- ggplot(waa_ts %>% filter(Age %in% c(4,6,8,12,18,20,22,24),
+                                        re_model == "3dar1",
+                                        peel == 0, Year != 2023),
+                      aes(x = Year, y = Mean, ymin = lwr_95, ymax = upr_95, 
+                          color = factor(Age), fill = factor(Age))) +
+  geom_line(size = 1.3) +
+  geom_vline(xintercept = 2014, lty = 1, size = 0.9, alpha = 0.85) +
+  geom_vline(xintercept = 2016, lty = 2, size = 0.9, alpha = 0.85) +
+  geom_ribbon(alpha = 0.2, color = NA) +
+  ggthemes::scale_color_colorblind() +
+  ggthemes::scale_fill_colorblind() +
+  facet_wrap(~Sex, ncol = 1, scales = "free") +
+  theme_reg() +
+  labs(y = "Weight (g)", fill = "Ages", color = "Ages")
+
+laa_ts_plot <- ggplot(laa_ts %>% filter(Age %in% c(4,6,8,12,18,20,22,24),
+                                        re_model == "3dar1",
+                                        peel == 0, Year != 2023), 
+                      aes(x = Year, y = Mean, ymin = lwr_95, ymax = upr_95, 
+                          color = factor(Age), fill = factor(Age))) +
+  geom_line(size = 1.3) +
+  geom_vline(xintercept = 2014, lty = 1, size = 0.9, alpha = 0.85) +
+  geom_vline(xintercept = 2016, lty = 2, size = 0.9, alpha = 0.85) +
+  geom_ribbon(alpha = 0.2, color = NA) +
+  ggthemes::scale_color_colorblind() +
+  ggthemes::scale_fill_colorblind() +
+  facet_wrap(~Sex, ncol = 1, scales = "free") +
+  theme_reg() +
+  labs(y = "Length (cm)", fill = "Ages", color = "Ages")
+
+pdf(here("figs", "ms_figs", "waa_ts.pdf"), width = 13, height = 13)
+ggarrange(waa_ts_plot, laa_ts_plot, labels = c("A", "B"),  legend = "right",
+          font.label = list(size = 20), common.legend = TRUE)
 dev.off()
 
 
@@ -286,16 +378,17 @@ val_range <- range(al_rel_diff$Anom)
 
 ### Plot AL Matrix Comparison -----------------------------------------------
 
-pdf(here("figs", "ms_figs", "AL_comp_plot.pdf"), width = 14)
+pdf(here("figs", "ms_figs", "AL_comp_plot.pdf"), width = 8, height = 10)
 print(
-  ggplot(al_rel_diff %>% filter(Age %in% c(2:6)) %>% 
+  ggplot(al_rel_diff %>% filter(Age %in% c(3,6,9,18,21,24)) %>% 
            mutate(sex = ifelse(sex == "female", "Female", "Male"))) +
-    geom_line(aes(x = Length,  y = Value, color = Year, group = Year), size = 1, alpha = 0.5) +
+    geom_line(aes(x = Length,  y = Value, color = Year, group = Year), size = 0.85, alpha = 0.7) +
     geom_line(aes(x = Length,  y = Ref), lty = 2, size = 1.3) +
-    scale_color_viridis_c() +
-    facet_grid(sex~Age) +
-    labs(x = "Length (cm)", y = "Probability", color = "Year") +
+    scale_color_distiller(palette = "YlGnBu", direction = -1) +
+    facet_grid(Age~sex) +
+    labs(x = "Length (cm)", y = "P(Length|Age)", color = "Year") +
     theme_reg() 
-)
-dev.off()
+  )
 
+dev.off()
+ 
