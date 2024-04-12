@@ -10,9 +10,9 @@ library(TMBhelper)
 library(here)
 library(tidyverse)
 
-# setwd("src")
+setwd("src")
 TMB::compile("Growth_Model.cpp")
-dyn.unload(dynlib("Growth_Model"))
+# dyn.unload(dynlib("Growth_Model"))
 dyn.load(dynlib('Growth_Model'))
 
 source(here("R", "functions.R"))
@@ -38,7 +38,7 @@ age_bins = sort(unique(age_dat$Tester_Age)) # set up number of age bins
 re_model = c("constant", "3dar1")
 sex_names = unique(age_dat$Sex_name)
 years = sort(unique(age_dat$Year))
-n_retro = 10
+n_retro = 0
 n_proj = 1 # projection years
 
 # Run Models --------------------------------------------------------------
@@ -149,9 +149,12 @@ for(r in 1:length(re_model)) {
       growth_all = rbind(growth_all, growth_df)
       sd_rep_all = rbind(sd_rep_summary, sd_rep_all)
       
-      if(y == 0 & re_model[r] == "3dar1") {
-        save(model, file =  here(dir.out, paste("length", sex_names[s], "3DAR1_Model.RData", sep = "_"))) # save model
+      if(y == 0 & re_model[r] %in% c("3dar1", "constant")) {
+        if(re_model[r] == "3dar1") name <- "3DAR1_Model.RData"
+        if(re_model[r] == "constant") name <- "Constant_Model.RData"
+        save(model, file =  here(dir.out, paste("length", sex_names[s], name, sep = "_"))) # save model
       } # save model for terminal
+      
       print(paste("Peel", y))
     } # end y loop
   } # end s loop

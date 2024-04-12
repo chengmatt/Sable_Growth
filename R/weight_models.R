@@ -69,13 +69,14 @@ for(r in 1:length(re_model)) {
                                   re_model = re_model[r], # random effects model
                                   var_param = 0, # variance parameterization for 3dar1
                                   n_proj_years = n_proj) # number of projection years
+      
       if(sex_names[s] == "Male") model_inputs$parameters$ln_X_inf = log(65)
       
       # set up AD object
       model = MakeADFun(data = model_inputs$data, 
                         parameters = model_inputs$parameters, 
                         DLL = "Growth_Model", random = "ln_eps_at", # specify what to integrate out
-                        map = model_inputs$map, silent = TRUE)
+                        map = model_inputs$map, silent = F)
       
       # optimize
       optim = stats::nlminb(model$par, model$fn, model$gr,  
@@ -148,8 +149,10 @@ for(r in 1:length(re_model)) {
       growth_all = rbind(growth_all, growth_df)
       sd_rep_all = rbind(sd_rep_summary, sd_rep_all)
       
-      if(y == 0 & re_model[r] == "3dar1") {
-        save(model, file =  here(dir.out, paste("weight", sex_names[s], "3DAR1_Model.RData", sep = "_"))) # save model
+      if(y == 0 & re_model[r] %in% c("3dar1", "constant")) {
+        if(re_model[r] == "3dar1") name <- "3DAR1_Model.RData"
+        if(re_model[r] == "constant") name <- "Constant_Model.RData"
+        save(model, file =  here(dir.out, paste("weight", sex_names[s], name, sep = "_"))) # save model
       } # save model for terminal
 
       print(paste("Peel", y))
