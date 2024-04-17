@@ -62,6 +62,52 @@ sq_df <- dget(here(model_path, "Prop_Within_Growth_SQ", "tem.rdat"))
 gv_df <- dget(here(model_path, "Prop_Within_Growth_Vary", "tem.rdat"))
 gv_par <- R2admb::read_pars(fn = here(model_path, "Prop_Within_Growth_Vary","tem"))
 sq_par <- R2admb::read_pars(fn = here(model_path, "Prop_Within_Growth_SQ","tem"))
+waa_dat <- read.csv(here("output", "ewaa.csv"))
+laa_dat <- read.csv(here("data", "age_view.csv"), check.names = FALSE) %>% 
+  filter(!is.na(Age), !is.na(`Length (cm)`), !is.na(`Weight (g)`),
+         `Sex Description` != "Unknown", `Error Flag` == 0,
+         !Age %in% c(0, 1)) %>% 
+  rename(Length = `Length (cm)`,
+         Sex_name = `Sex Description`,
+         Weight = `Weight (g)`) %>% 
+  mutate(Age = ifelse(Age >= 31, 31, Age), # collapse ages to + group
+         Year = Year - min(Year)) %>% 
+  select(Length, Weight, Age, Year, Sex_name) %>% 
+  mutate(Read_Age = Age) %>% 
+  rename(Tester_Age = Age) # rename
+
+# Munging WAA data for plotting
+waa_dat <- waa_dat %>% 
+  rename(Age = Tester_Age, 
+         Sex = Sex_name, 
+         Mean = mean) %>% 
+  mutate(lwr_95 = exp(log(Mean) - 1.96 * log_sd),
+         upr_95 = exp(log(Mean) + 1.96 * log_sd),
+         Year = Year + 1996,
+         broodYear = Year-Age, 
+         Sex = ifelse(Sex == "female", "Female", "Male"),
+         large_rec_age1 = (2014 - broodYear) + 2,
+         large_rec_age2 = (2016 - broodYear) + 2,
+         large_rec_age1 = ifelse(large_rec_age1 <= 1, NA, large_rec_age1),
+         large_rec_age2 = ifelse(large_rec_age2 <= 1, NA, large_rec_age2))
+
+# Munging LAA data for plotting
+laa_dat <- laa_dat %>% 
+  rename(Age = Tester_Age, 
+         Sex = Sex_name) %>% 
+  # group_by(Age, Sex, Year) %>% 
+  # summarize(Mean = mean(Length), sd = sd(Length)) %>% 
+  mutate(
+         # lwr_95 = Mean - 1.96 * sd,
+         # upr_95 = Mean + 1.96 * sd,
+         Year = Year + 1996,
+         broodYear = Year-Age,
+         Sex = ifelse(Sex == "female", "Female", "Male"),
+         large_rec_age1 = (2014 - broodYear) + 2,
+         large_rec_age2 = (2016 - broodYear) + 2,
+         large_rec_age1 = ifelse(large_rec_age1 <= 1, NA, large_rec_age1),
+         large_rec_age2 = ifelse(large_rec_age2 <= 1, NA, large_rec_age2))
+
 
 # SSB and B40 -------------------------------------------------------------
 
@@ -149,24 +195,24 @@ ggarrange(ab, abc_plot, widths = c(0.7, 0.3), labels = c('A', "C"),
           font.label = list(size = 25), hjust = -0.3, vjust = 1.3)
 dev.off()
 
-# Look at mean differences in recruitment (probably just distributing
+
+# Recruitment Comparisons -------------------------------------------------
+
+# Look at differences in ssb and recruitment (probably just distributing
 # age classes differently because of the age-length transition)
+plot((gv_ssb$coeff - sq_ssb$coeff)/sq_ssb$coeff)
+cor(gv_ssb$coeff, sq_ssb$coeff, method = "pearson")
+
+plot((gv_rec$coeff - sq_rec$coeff)/sq_rec$coeff, type = "l")
+cor(gv_rec$coeff, sq_rec$coeff, method = "pearson")
+
+gv_abc$coeff
+sq_abc$coeff
+
 rec_df %>% 
   group_by(type) %>% 
   filter(Year %in% c(2016:2021)) %>%
-  summarize(mean = mean(rec))
-
-ggplot(rec_df %>% 
-         select(Year, type ,rec) %>% 
-         filter(Year != 2023) %>% 
-         pivot_wider(names_from = type, values_from = rec) %>% 
-         mutate(diff = (`Growth Vary` - `Growth SQ`) ), aes(x = Year, y = diff)) +
-  geom_line(size = 1) +
-  geom_point(size = 4) +
-  geom_hline(yintercept = 0, lty = 2) +
-  theme_reg() +
-  theme(legend.position = "none") +
-  labs(x = "Year", y = "Difference in Age-2 Recruitment (millions)", color = "Model", fill = "Model")
+  summarize(mean = sum(rec))
 
 # Anomaly Plot ------------------------------------------------------------
 
@@ -225,6 +271,125 @@ anom_laa = laa_ts %>% filter(re_model == "3dar1") %>%
 #           font.label = list(size = 25), vjust = 3.5)
 # dev.off()
 
+
+# Compare Residuals -------------------------------------------------------
+### Munging residual dataframe -----------------------------------------------------
+
+# Weight at age residuals
+waa_resids <- waa_ts %>% 
+  filter(peel == 0) %>% 
+  rename(Pred = Mean) %>% 
+  left_join(waa_dat %>% select(Year, Age, Sex, Mean) %>% rename(Obs = Mean), by = c("Sex", "Age", "Year")) %>% 
+  mutate(re_model = ifelse(re_model == "3dar1", "Growth Varying", "Constant Growth"))
+
+# Length-at-age residuals
+laa_dat_sub <- laa_dat %>% 
+  select(Year, Age, Sex, Length) %>% 
+  rename(Obs = Length)
+  
+# Subset to laa constant models
+laa_constant_ts_sb <- laa_ts %>% 
+  filter(peel == 0, re_model == "constant") %>%
+  rename(Pred = Mean) %>% 
+  select(Sex, Age, Year, Pred)
+
+# subset to time varying 3dar1 model
+laa_3dar1_ts_sb <- laa_ts %>% 
+  filter(peel == 0, re_model == "3dar1") %>%
+  rename(Pred = Mean) %>% 
+  select(Sex, Age, Year, Pred)
+  
+# left join here constant model
+laa_const_resids <- laa_constant_ts_sb %>% 
+    left_join(laa_dat_sub, by = c("Sex", "Age", "Year")) %>% 
+    mutate(Model = "Constant Growth")
+
+# left join 3dar1 model
+laa_3dar1_resids <- laa_3dar1_ts_sb %>% 
+  left_join(laa_dat_sub, by = c("Sex", "Age", "Year")) %>% 
+  mutate(Model = "Growth Varying")
+
+# now rbind everything
+laa_resids <- rbind(laa_const_resids, laa_3dar1_resids)
+
+# Get standardized residuals WAA
+waa_resids <- waa_resids %>% 
+  mutate(raw = Obs - Pred) %>% 
+  group_by(Sex, re_model) %>% 
+  mutate(sd = sd(raw, na.rm = TRUE),
+         std_resid = raw / sd)
+
+# Get standardized residuals LAA
+laa_resids <- laa_resids %>% 
+  mutate(raw = Obs - Pred) %>% 
+  group_by(Sex, Model) %>% 
+  mutate(sd = sd(raw, na.rm = TRUE),
+         std_resid = raw / sd)
+
+### Plot all! ---------------------------------------------------------------
+
+# annual residuals
+waa_yr <- ggplot(waa_resids, aes(x = Year, y = std_resid)) +
+  geom_point(alpha = 0.075) +
+  geom_smooth(aes(fill = re_model, color = re_model), size = 2, method = "gam") +
+  geom_hline(yintercept = 0, lty = 2, size = 1) +
+  facet_grid(re_model~Sex) +
+  scale_color_manual(values = c("#0072B2", "#D55E00")) +
+  scale_fill_manual(values = c("#0072B2", "#D55E00")) +
+  scale_x_continuous(breaks = seq(1995, 2020, 5)) +
+  coord_cartesian(ylim = c(-4, 4)) +
+  theme_reg() +
+  theme(legend.position = "none") +
+  labs(x = "Year", y = "WAA Standardized Residuals", fill = "Model")
+
+# cohort residuals
+waa_cohort <- ggplot(waa_resids, aes(x = broodYear, y = std_resid)) +
+  geom_point(alpha = 0.075) +
+  geom_smooth(aes(fill = re_model, color = re_model), size = 2, method = "gam") +
+  geom_hline(yintercept = 0, lty = 2, size = 1) +
+  facet_grid(re_model~Sex) +
+  scale_x_continuous(breaks = seq(1965, 2020, 10)) +
+  scale_color_manual(values = c("#0072B2", "#D55E00")) +
+  scale_fill_manual(values = c("#0072B2", "#D55E00")) +
+  coord_cartesian(ylim = c(-4, 4)) +
+  theme_reg() +
+  theme(legend.position = "none") +
+  labs(x = "Cohort", y = "WAA Standardized Residuals", fill = "Model")
+
+# length year resids
+laa_yr <- ggplot(laa_resids, aes(x = Year, y = std_resid)) +
+  geom_point(alpha = 0.008) +
+  geom_smooth(aes(fill = Model, color = Model), size = 2, method = "gam") +
+  geom_hline(yintercept = 0, lty = 2, size = 1) +
+  facet_grid(Model~Sex) +
+  coord_cartesian(ylim = c(-4, 4)) +
+  scale_x_continuous(breaks = seq(1995, 2020, 5)) +
+  scale_color_manual(values = c("#0072B2", "#D55E00")) +
+  scale_fill_manual(values = c("#0072B2", "#D55E00")) +
+  theme_reg() +
+  theme(legend.position = "none") +
+  labs(x = "Year", y = "LAA Standardized Residuals", fill = "Model")
+
+# length cohort resids
+laa_cohort <- ggplot(laa_resids %>% mutate(broodYear = Year - Age), 
+       aes(x = broodYear, y = std_resid)) +
+  geom_point(alpha = 0.008) +
+  geom_smooth(aes(fill = Model, color = Model), size = 2, method = "gam") +
+  geom_hline(yintercept = 0, lty = 2, size = 1) +
+  facet_grid(Model~Sex) +
+  coord_cartesian(ylim = c(-4, 4)) +
+  scale_x_continuous(breaks = seq(1965, 2020, 10)) +
+  scale_color_manual(values = c("#0072B2", "#D55E00")) +
+  scale_fill_manual(values = c("#0072B2", "#D55E00")) +
+  theme_reg() +
+  theme(legend.position = "none") +
+  labs(x = "Cohort", y = "LAA Standardized Residuals", fill = "Model")
+
+pdf(here("figs", "ms_figs", "growth_residuals.pdf"), width = 13, height = 10)
+ggarrange(waa_yr, laa_yr, 
+          waa_cohort, laa_cohort, labels = c("A", "B", "C", "D"), font.label = list(size = 20))
+dev.off()
+
 # Cohort Plot -------------------------------------------------------------
 
 # create ages at which large recruitment events were observed
@@ -246,6 +411,8 @@ waa_plot <- ggplot() +
               mapping = aes(x = Age, y = Mean, ymin = lwr_95, ymax = upr_95, fill = Sex), alpha = 0.3) +
   geom_line(waa_ts %>% filter(broodYear %in% seq(2010,2016,1), Year != 2023, peel == 0, re_model == "constant"),
             mapping = aes(x = Age, y = Mean), size = 1.3, lty = 3) +
+  geom_ribbon(waa_ts %>% filter(broodYear %in% seq(2010,2016,1), Year != 2023, peel == 0, re_model == "constant"),
+              mapping = aes(x = Age, y = Mean, ymin = lwr_95, ymax = upr_95), alpha = 0.3) +
   geom_vline(waa_ts %>% filter(broodYear %in% seq(2010,2016,1), Year != 2023, peel == 0, re_model == "constant"), 
              mapping = aes(xintercept = large_rec_age1), size = 0.75) +
   geom_vline(waa_ts %>% filter(broodYear %in% seq(2010,2016,1), Year != 2023, peel == 0, re_model == "constant"), 
@@ -267,6 +434,8 @@ laa_plot <- ggplot() +
             mapping = aes(x = Age, y = Mean), size = 1.3, lty = 3) +
   geom_vline(laa_ts %>% filter(broodYear %in% seq(2010,2016,1), Year != 2023, peel == 0, re_model == "constant"), 
              mapping = aes(xintercept = large_rec_age1), size = 0.75) +
+  geom_ribbon(laa_ts %>% filter(broodYear %in% seq(2010,2016,1), Year != 2023, peel == 0, re_model == "constant"),
+              mapping = aes(x = Age, y = Mean, ymin = lwr_95, ymax = upr_95), alpha = 0.3) +
   geom_vline(laa_ts %>% filter(broodYear %in% seq(2010,2016,1), Year != 2023, peel == 0, re_model == "constant"), 
              mapping = aes(xintercept = large_rec_age2), lty = 2, size = 0.75) +
   scale_x_continuous(breaks = integer_breaks()) +
@@ -282,8 +451,6 @@ ggarrange(waa_plot, laa_plot, ncol = 1,
           labels = c('A', "B"),
           font.label = list(size = 25), hjust = -0.6)
 dev.off()
-
-
 
 # Time Series Plot --------------------------------------------------------
 
@@ -327,12 +494,66 @@ ggarrange(waa_ts_plot, laa_ts_plot, labels = c("A", "B"),  legend = "right",
 dev.off()
 
 
+# Supplementary (All Ages) ------------------------------------------------
+
+waa_ts_plot <-
+  ggplot(waa_ts) +
+  annotate("rect", xmin = 2014, xmax = Inf, ymin = -Inf, ymax = Inf, color = "grey", fill = "grey", alpha = 0.75) +
+  geom_line(waa_ts %>% filter(re_model == "3dar1", peel == 0, Year != 2023),
+            mapping = aes(x = Year, y = Mean, color = factor(Sex)), size = 1.3) +
+  geom_ribbon(waa_ts %>% filter(re_model == "3dar1", peel == 0, Year != 2023),
+              mapping = aes(x = Year, y = Mean, ymin = lwr_95, ymax = upr_95, fill = factor(Sex)), alpha = 0.2) +
+  geom_line(waa_ts %>% filter(re_model == "constant", peel == 0, Year != 2023),
+            mapping = aes(x = Year, y = Mean, color = factor(Sex)), size = 1.3, lty = 2) +
+  geom_ribbon(waa_ts %>% filter(re_model == "constant", peel == 0, Year != 2023),
+              mapping = aes(x = Year, y = Mean, ymin = lwr_95, ymax = upr_95, fill = factor(Sex)), alpha = 0.2) +
+  facet_wrap(~Age, scales = "free") +
+  scale_color_manual(values = c("#DC3220", "#005AB5")) +
+  scale_fill_manual(values = c("#DC3220", "#005AB5")) +
+  theme_reg() +
+  labs(y = "Weight (g)", fill = "Sex", color = "Sex") +
+  theme(legend.title = element_text(size = 23),
+        legend.text = element_text(size = 20),
+        axis.title = element_text(size = 23),
+        axis.text = element_text(size = 15),
+        strip.text = element_text(size = 23)) 
+
+laa_ts_plot <-
+  ggplot(laa_ts) +
+  annotate("rect", xmin = 2014, xmax = Inf, ymin = -Inf, ymax = Inf, color = "grey", fill = "grey", alpha = 0.75) +
+  geom_line(laa_ts %>% filter(re_model == "3dar1", peel == 0, Year != 2023),
+            mapping = aes(x = Year, y = Mean, color = factor(Sex)), size = 1.3) +
+  geom_ribbon(laa_ts %>% filter(re_model == "3dar1", peel == 0, Year != 2023),
+              mapping = aes(x = Year, y = Mean, ymin = lwr_95, ymax = upr_95, fill = factor(Sex)), alpha = 0.2) +
+  geom_line(laa_ts %>% filter(re_model == "constant", peel == 0, Year != 2023),
+            mapping = aes(x = Year, y = Mean, color = factor(Sex)), size = 1.3, lty = 2) +
+  geom_ribbon(laa_ts %>% filter(re_model == "constant", peel == 0, Year != 2023),
+              mapping = aes(x = Year, y = Mean, ymin = lwr_95, ymax = upr_95, fill = factor(Sex)), alpha = 0.2) +
+  facet_wrap(~Age, scales = "free") +
+  scale_color_manual(values = c("#DC3220", "#005AB5")) +
+  scale_fill_manual(values = c("#DC3220", "#005AB5")) +
+  theme_reg() +
+  labs(y = "Length (cm)", fill = "Sex", color = "Sex") +
+    theme(legend.title = element_text(size = 23),
+        legend.text = element_text(size = 20),
+        axis.title = element_text(size = 23),
+        axis.text = element_text(size = 15),
+        strip.text = element_text(size = 23)) 
+
+pdf(here("figs", "ms_figs", "supp_waa_ts.pdf"), width = 23, height = 15)
+waa_ts_plot
+dev.off()
+
+pdf(here("figs", "ms_figs", "supp_laa_ts.pdf"), width = 23, height = 15)
+laa_ts_plot
+dev.off()
+
 # Compare RPN and Growth --------------------------------------------------
 
 # Weight-at-age
 waa_sub <- waa_ts %>% filter(re_model == "3dar1", peel == 0, Year != 2023) # subset waa estimates
 rpns <- data.frame(RPN = sq_df$obssrv3$obssrv3, Year = as.numeric(rownames(sq_df$obssrv3))) # extract survey RPNs
-rpns_sub <- rpns %>% filter(Year %in% c(1996:2023)) %>% mutate(Rec = c(sq_df$oac.srv1.f[,1], NA)) # subset rpn dataframe
+rpns_sub <- rpns %>% filter(Year %in% c(1996:2023))
 waa_sub <- waa_sub %>% left_join(rpns_sub, by = c("Year")) # leftjoin rpns to WAA data
 
 # Length-at-age
@@ -341,15 +562,27 @@ laa_sub <- laa_sub %>% left_join(rpns_sub, by = c("Year")) # leftjoin rpns to WA
 
 # Plot Weights!
 # Females
-waa_rpn_plot <- ggplot() +
+waa_rpn_plot <-
+  ggplot() +
   geom_point(waa_sub %>% filter(Age %in% c(3,6,9,12,18,21)), 
              mapping = aes(x = log(RPN), y = log(Mean)), size = 2, alpha = 0.3) +
-  geom_text(waa_sub %>% filter(Year %in% seq(2014, 2020, 2), Age %in% c(3,6,9,12,18,21)), 
-            mapping = aes(x = log(RPN), y = log(Mean), label=Year), size = 4, nudge_y = 0.02)+
-  geom_path(waa_sub %>% filter(Year %in% c(2014:2023), Age %in% c(3,6,9,12,18,21)), 
-            mapping = aes(x = log(RPN), y = log(Mean)), alpha = 0.85, size = 0.85, arrow = arrow()) +
+  geom_path(waa_sub %>% filter(Year %in% c(2014:2023), Age %in% c(3,6,9,12,18,21)),
+            mapping = aes(x = log(RPN), y = log(Mean)), alpha = 0.55, size = 0.85, arrow = arrow()) +
   geom_smooth(waa_sub %>% filter(Age %in% c(3,6,9,12,18,21)), 
-              mapping = aes(x = log(RPN), y = log(Mean), fill = Sex, color = Sex), alpha = 0.2, lty = 2, method = "loess", span = 5) +
+                mapping = aes(x = log(RPN), y = log(Mean), fill = Sex, color = Sex), method="lm", se=TRUE, 
+                formula=y ~ poly(x, 2, raw=TRUE), alpha = 0.2, lty = 2) + 
+  ggpmisc::stat_poly_eq(waa_sub %>% filter( Age %in% c(3,6,9,12,18,21)),  p.digits = 3,
+                        mapping = aes(x = log(RPN), y = log(Mean)),
+                        label.x = "right",
+                        label.y = "top",
+                        method="lm", formula=y ~ poly(x, 2, raw=TRUE)) +
+  ggpmisc::stat_fit_glance(waa_sub %>% filter(Age %in% c(3,6,9,12,18,21)), method = "lm", 
+                    method.args = list(formula = y ~ poly(x, 2, raw=TRUE)),
+                    label.x = "right",
+                    label.y = 0.8,
+                    mapping = aes(x = log(RPN), y = log(Mean), 
+                    label = sprintf("italic(p)*\"= \"*%.3g", 
+                                    round(after_stat(p.value), 4))), parse = TRUE) +
   facet_grid(Age~Sex, scales = "free") +
   scale_color_manual(values = c("#DC3220", "#005AB5")) +
   scale_fill_manual(values = c("#DC3220", "#005AB5")) +
@@ -361,13 +594,24 @@ waa_rpn_plot <- ggplot() +
 laa_rpn_plot <- ggplot() +
   geom_point(laa_sub %>% filter(Age %in% c(3,6,9,12,18,21)), 
              mapping = aes(x = log(RPN), y = log(Mean)), size = 2, alpha = 0.3) +
-  geom_text(laa_sub %>% filter(Year %in% seq(2014, 2020, 2), Age %in% c(3,6,9,12,18,21)), 
-            mapping = aes(x = log(RPN), y = log(Mean), label=Year), size = 4, nudge_y = 0.02)+
-  geom_path(laa_sub %>% filter(Year %in% c(2014:2023), Age %in% c(3,6,9,12,18,21)), 
-            mapping = aes(x = log(RPN), y = log(Mean)), alpha = 0.85, size = 0.85, arrow = arrow()) +
-  facet_grid(Age~Sex, scales = "free") +
+  geom_path(laa_sub %>% filter(Year %in% c(2014:2023), Age %in% c(3,6,9,12,18,21)),
+            mapping = aes(x = log(RPN), y = log(Mean)), alpha = 0.55, size = 0.85, arrow = arrow()) +
   geom_smooth(laa_sub %>% filter(Age %in% c(3,6,9,12,18,21)), 
-              mapping = aes(x = log(RPN), y = log(Mean), fill = Sex, color = Sex), alpha = 0.2, lty = 2, method = "loess", span = 5) +
+              mapping = aes(x = log(RPN), y = log(Mean), fill = Sex, color = Sex), method="lm", se=TRUE, 
+              formula=y ~ poly(x, 2, raw=TRUE), alpha = 0.2, lty = 2) + 
+  ggpmisc::stat_poly_eq(laa_sub %>% filter( Age %in% c(3,6,9,12,18,21)),  p.digits = 3,
+                        mapping = aes(x = log(RPN), y = log(Mean)),
+                        label.x = "right",
+                        label.y = "top",
+                        method="lm", formula=y ~ poly(x, 2, raw=TRUE)) +
+  ggpmisc::stat_fit_glance(laa_sub %>% filter(Age %in% c(3,6,9,12,18,21)), method = "lm", 
+                           method.args = list(formula = y ~ poly(x, 2, raw=TRUE)),
+                           label.x = "right",
+                           label.y = 0.8,
+                           mapping = aes(x = log(RPN), y = log(Mean), 
+                                         label = sprintf("italic(p)*\"= \"*%.3g", 
+                                                         round(after_stat(p.value), 4))), parse = TRUE) +
+  facet_grid(Age~Sex, scales = "free") +
   scale_color_manual(values = c("#DC3220", "#005AB5")) +
   scale_fill_manual(values = c("#DC3220", "#005AB5")) +
   theme_reg() +
@@ -380,6 +624,139 @@ ggarrange(waa_rpn_plot, laa_rpn_plot, ncol = 2,
           font.label = list(size = 25), hjust = -0.6)
 dev.off()
 
+
+# Supplementary (All Ages) ------------------------------------------------
+
+# all ages WAA
+f_waa_rpn_plot <-
+  ggplot() +
+  geom_point(waa_sub %>% filter(Sex == "Female"), 
+             mapping = aes(x = log(RPN), y = log(Mean)), size = 2, alpha = 0.3) +
+  geom_path(waa_sub %>% filter(Year %in% c(2014:2023), Sex == "Female"),
+            mapping = aes(x = log(RPN), y = log(Mean)), alpha = 0.55, size = 0.85, arrow = arrow()) +
+  geom_smooth(waa_sub %>% filter(Sex == "Female"), 
+              mapping = aes(x = log(RPN), y = log(Mean), fill = Sex, color = Sex), method="lm", se=TRUE, 
+              formula=y ~ poly(x, 2, raw=TRUE), alpha = 0.2, lty = 2) + 
+  ggpmisc::stat_poly_eq(waa_sub %>% filter(Sex == "Female"),  p.digits = 3,
+                        mapping = aes(x = log(RPN), y = log(Mean)),
+                        label.x = "right",
+                        label.y = "top",
+                        method="lm", formula=y ~ poly(x, 2, raw=TRUE)) +
+  ggpmisc::stat_fit_glance(waa_sub %>% filter(Sex == "Female"), method = "lm", 
+                           method.args = list(formula = y ~ poly(x, 2, raw=TRUE)),
+                           label.x = "right",
+                           label.y = 0.8,
+                           mapping = aes(x = log(RPN), y = log(Mean), 
+                                         label = sprintf("italic(p)*\"= \"*%.3g", 
+                                                         round(after_stat(p.value), 4))), parse = TRUE) +
+  facet_wrap(~Age, scales = "free") +
+  scale_color_manual(values = c("#DC3220")) +
+  scale_fill_manual(values = c("#DC3220")) +
+  theme_reg() +
+  labs(x = "log(Survey RPN)", y = "log(Weight (g))")  +
+  theme(legend.position = "none")
+
+m_waa_rpn_plot <-
+  ggplot() +
+  geom_point(waa_sub %>% filter(Sex == "Male"), 
+             mapping = aes(x = log(RPN), y = log(Mean)), size = 2, alpha = 0.3) +
+  geom_path(waa_sub %>% filter(Year %in% c(2014:2023), Sex == "Male"),
+            mapping = aes(x = log(RPN), y = log(Mean)), alpha = 0.55, size = 0.85, arrow = arrow()) +
+  geom_smooth(waa_sub %>% filter(Sex == "Male"), 
+              mapping = aes(x = log(RPN), y = log(Mean), fill = Sex, color = Sex), method="lm", se=TRUE, 
+              formula=y ~ poly(x, 2, raw=TRUE), alpha = 0.2, lty = 2) + 
+  ggpmisc::stat_poly_eq(waa_sub %>% filter(Sex == "Male"),  p.digits = 3,
+                        mapping = aes(x = log(RPN), y = log(Mean)),
+                        label.x = "right",
+                        label.y = "top",
+                        method="lm", formula=y ~ poly(x, 2, raw=TRUE)) +
+  ggpmisc::stat_fit_glance(waa_sub %>% filter(Sex == "Male"), method = "lm", 
+                           method.args = list(formula = y ~ poly(x, 2, raw=TRUE)),
+                           label.x = "right",
+                           label.y = 0.8,
+                           mapping = aes(x = log(RPN), y = log(Mean), 
+                                         label = sprintf("italic(p)*\"= \"*%.3g", 
+                                                         round(after_stat(p.value), 4))), parse = TRUE) +
+  facet_wrap(~Age, scales = "free") +
+  scale_color_manual(values = c("#005AB5")) +
+  scale_fill_manual(values = c("#005AB5")) +
+  theme_reg() +
+  labs(x = "log(Survey RPN)", y = "log(Weight (g))")  +
+  theme(legend.position = "none")
+
+pdf(here("figs", "ms_figs", "supp_rpn_waaF.pdf"), width = 12, height = 10)
+f_waa_rpn_plot
+dev.off()
+
+pdf(here("figs", "ms_figs", "supp_rpn_waaM.pdf"), width = 12, height = 10)
+m_waa_rpn_plot
+dev.off()
+
+f_laa_rpn_plot <-
+  ggplot() +
+  geom_point(laa_sub %>% filter(Sex == "Female"), 
+             mapping = aes(x = log(RPN), y = log(Mean)), size = 2, alpha = 0.3) +
+  geom_path(laa_sub %>% filter(Year %in% c(2014:2023), Sex == "Female"),
+            mapping = aes(x = log(RPN), y = log(Mean)), alpha = 0.55, size = 0.85, arrow = arrow()) +
+  geom_smooth(laa_sub %>% filter(Sex == "Female"), 
+              mapping = aes(x = log(RPN), y = log(Mean), fill = Sex, color = Sex), method="lm", se=TRUE, 
+              formula=y ~ poly(x, 2, raw=TRUE), alpha = 0.2, lty = 2) + 
+  ggpmisc::stat_poly_eq(laa_sub %>% filter(Sex == "Female"),  p.digits = 3,
+                        mapping = aes(x = log(RPN), y = log(Mean)),
+                        label.x = "right",
+                        label.y = "top",
+                        method="lm", formula=y ~ poly(x, 2, raw=TRUE)) +
+  ggpmisc::stat_fit_glance(laa_sub %>% filter(Sex == "Female"), method = "lm", 
+                           method.args = list(formula = y ~ poly(x, 2, raw=TRUE)),
+                           label.x = "right",
+                           label.y = 0.8,
+                           mapping = aes(x = log(RPN), y = log(Mean), 
+                                         label = sprintf("italic(p)*\"= \"*%.3g", 
+                                                         round(after_stat(p.value), 4))), parse = TRUE) +
+  facet_wrap(~Age, scales = "free") +
+  scale_color_manual(values = c("#DC3220")) +
+  scale_fill_manual(values = c("#DC3220")) +
+  theme_reg() +
+  labs(x = "log(Survey RPN)", y = "log(Length (cm))")  +
+  theme(legend.position = "none")
+
+m_laa_rpn_plot <-
+  ggplot() +
+  geom_point(laa_sub %>% filter(Sex == "Male"), 
+             mapping = aes(x = log(RPN), y = log(Mean)), size = 2, alpha = 0.3) +
+  geom_path(laa_sub %>% filter(Year %in% c(2014:2023), Sex == "Male"),
+            mapping = aes(x = log(RPN), y = log(Mean)), alpha = 0.55, size = 0.85, arrow = arrow()) +
+  geom_smooth(laa_sub %>% filter(Sex == "Male"), 
+              mapping = aes(x = log(RPN), y = log(Mean), fill = Sex, color = Sex), method="lm", se=TRUE, 
+              formula=y ~ poly(x, 2, raw=TRUE), alpha = 0.2, lty = 2) + 
+  ggpmisc::stat_poly_eq(laa_sub %>% filter(Sex == "Male"),  p.digits = 3,
+                        mapping = aes(x = log(RPN), y = log(Mean)),
+                        label.x = "right",
+                        label.y = "top",
+                        method="lm", formula=y ~ poly(x, 2, raw=TRUE)) +
+  ggpmisc::stat_fit_glance(laa_sub %>% filter(Sex == "Male"), method = "lm", 
+                           method.args = list(formula = y ~ poly(x, 2, raw=TRUE)),
+                           label.x = "right",
+                           label.y = 0.8,
+                           mapping = aes(x = log(RPN), y = log(Mean), 
+                                         label = sprintf("italic(p)*\"= \"*%.3g", 
+                                                         round(after_stat(p.value), 4))), parse = TRUE) +
+  facet_wrap(~Age, scales = "free") +
+  scale_color_manual(values = c("#005AB5")) +
+  scale_fill_manual(values = c("#005AB5")) +
+  theme_reg() +
+  labs(x = "log(Survey RPN)", y = "log(Length (cm))")  +
+  theme(legend.position = "none")
+
+pdf(here("figs", "ms_figs", "supp_rpn_laaF.pdf"), width = 12, height = 10)
+f_laa_rpn_plot
+dev.off()
+
+pdf(here("figs", "ms_figs", "supp_rpn_laaM.pdf"), width = 12, height = 10)
+m_laa_rpn_plot
+dev.off()
+
+
 # Compare input differences -----------------------------------------------------
 # Size Transition Differences ---------------------------------------------
 age_bins = 2:31
@@ -389,7 +766,7 @@ years = unique(waa_ts$Year)
 n_proj_years = 1
 # extract out length models
 length_models = list.files(here("output", "LAA_Models"))
-length_models = length_models[str_detect(length_models, ".RData")]
+length_models = length_models[str_detect(length_models, "3DAR1_Model.RData")]
 
 # Get size transition matrix
 for(i in 1:length(length_models)) {
@@ -456,7 +833,6 @@ print(
     theme_reg() 
   )
 dev.off()
- 
 
 # Compare AIC -------------------------------------------------------------
 
@@ -466,6 +842,7 @@ load(here("output", "LAA_Models", "length_female_3DAR1_Model.RData"))
 len_f_3dar1 <- model # rename models
 load(here("output", "LAA_Models", "length_female_Constant_Model.RData"))
 len_f_constant <- model # rename models
+
 
 # Males
 load(here("output", "LAA_Models", "length_Male_3DAR1_Model.RData"))
@@ -506,3 +883,10 @@ for(i in 1:length(model_list)) {
   AIC_df <- rbind(AIC_df, tmp)
 } # end i
 
+# Create grouping variable
+AIC_df <- AIC_df %>% mutate(Type = ifelse(str_detect(Model, "constant"), "Constant", "3DAR1"),
+                            Model = str_remove(Model, "_3dar1"), Model = str_remove(Model, "_constant"))
+
+AIC_df %>% pivot_wider(names_from = "Type", values_from = "AIC") %>% 
+  mutate(difference = `3DAR1` - Constant) %>% 
+  summarize(mean(difference))
