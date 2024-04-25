@@ -31,17 +31,25 @@ integer_breaks <- function(n = 5, ...) {
   return(fxn)
 }
 
-par_coeff <- function(df, coeff_ex, type) {
+par_coeff <- function(df, coeff_ex, type, log = FALSE) {
   
   # Extract them out!
   coeff <- df$coefficients[names(df$coefficients) %in% c(coeff_ex)]
   se <- df$se[names(df$coefficients) %in% c(coeff_ex)]
   
-  par_df <- data.frame(coeff = coeff, se = se,
-                       upr = (coeff + (1.96*se)),
-                       downr = (coeff - (1.96*se)),
-                       type = type,
-                       coeff_type = names(coeff))
+  if(log == FALSE) {
+    par_df <- data.frame(coeff = coeff, se = se,
+                         upr = (coeff + (1.96*se)),
+                         downr = (coeff - (1.96*se)),
+                         type = type,
+                         coeff_type = names(coeff))
+  } else{
+    par_df <- data.frame(coeff = coeff, se = se,
+                         upr = exp((coeff + (1.96*se))),
+                         downr = exp((coeff - (1.96*se))),
+                         type = type,
+                         coeff_type = names(coeff))
+  }
   
   return(par_df)
 }
@@ -144,15 +152,15 @@ sq_abc <- par_coeff(sq_par, "ABC", type = "Growth SQ")
 abc_df = rbind(gv_abc, sq_abc)
 
 # Recruitment Stuff
-gv_rec <- par_coeff(gv_par, "pred_rec", type = "Growth Vary") %>% mutate(Year = 1960:2023)
-sq_rec <- par_coeff(sq_par, "pred_rec", type = "Growth SQ") %>%  mutate(Year = 1960:2023)
+gv_rec <- par_coeff(gv_par, "pred_rec", type = "Growth Vary", log = TRUE) %>% mutate(Year = 1960:2023)
+sq_rec <- par_coeff(sq_par, "pred_rec", type = "Growth SQ", log = TRUE) %>%  mutate(Year = 1960:2023)
 
 # Get mean recruitment as well
 gv_meanrec <- par_coeff(gv_par, "log_mean_rec", type = "Growth Vary") 
 sq_meanrec <- par_coeff(sq_par, "log_mean_rec", type = "Growth SQ") 
 
 meanrec_df = rbind(gv_meanrec, sq_meanrec)
-rec_df = rbind(gv_rec, sq_rec) %>%  mutate(downr = ifelse(downr <=0, 0, downr)) %>% rename(rec = coeff)
+rec_df = rbind(gv_rec, sq_rec) %>%  mutate(coeff = exp(coeff)) %>% rename(rec = coeff) 
 rec_df = rec_df %>% left_join(meanrec_df %>% rename(meanrec = coeff) %>% mutate(meanrec = exp(meanrec)) %>% 
                                 select(type, meanrec), by = "type")
 
@@ -162,8 +170,9 @@ ssb_plot = ggplot(ssb_df %>% filter(Year <= 2023), aes(x = Year, y = ssb, color 
                                                        ymin = downr, ymax = upr, fill = type)) +
   geom_ribbon(alpha = 0.35, color = NA) +
   geom_line(aes(color = type), size = 1.3) +
-  geom_hline(aes(yintercept = b40, color = type), lty = 2, size = 1.3) +
+  geom_hline(aes(yintercept = b40, color = type), lty = 2, size = 1.65) +
   theme_reg() +
+  ylim(0, NA) +
   theme(legend.position = c(0.88, 0.85)) +
   scale_color_manual(values = c("#0072B2", "#D55E00")) +
   scale_fill_manual(values = c("#0072B2", "#D55E00")) +
@@ -172,7 +181,7 @@ ssb_plot = ggplot(ssb_df %>% filter(Year <= 2023), aes(x = Year, y = ssb, color 
 rec_plot = ggplot(rec_df, aes(x = Year, y = rec, ymin = downr, ymax = upr, fill = type)) +
   geom_line(aes(color = type), size = 1.3) +
   geom_ribbon(alpha = 0.35) +
-  geom_hline(aes(yintercept = meanrec, color = type), lty = 2, size = 1.3) +
+  geom_hline(aes(yintercept = meanrec, color = type), lty = 2, size = 1.65) +
   theme_reg() +
   scale_color_manual(values = c("#0072B2", "#D55E00")) +
   scale_fill_manual(values = c("#0072B2", "#D55E00")) +
@@ -188,7 +197,7 @@ abc_plot = ggplot(abc_df, aes(x = type, y = coeff, ymin = downr, ymax = upr, col
   scale_fill_manual(values = c("#0072B2", "#D55E00")) +
   theme(legend.position = "none")
 
-pdf(here("figs", "ms_figs", "stock_status.pdf"), width = 9, height = 8)
+pdf(here("figs", "ms_figs", "stock_status.pdf"), width = 10, height = 10)
 ab = ggarrange(ssb_plot, rec_plot, ncol = 1, labels = c('', "B"), 
                font.label = list(size = 25), hjust = -0.3, vjust = 1.3)
 ggarrange(ab, abc_plot, widths = c(0.7, 0.3), labels = c('A', "C"),
@@ -211,7 +220,7 @@ sq_abc$coeff
 
 rec_df %>% 
   group_by(type) %>% 
-  filter(Year %in% c(2016:2021)) %>%
+  filter(Year %in% c(2016:2020)) %>%
   summarize(mean = sum(rec))
 
 # Anomaly Plot ------------------------------------------------------------

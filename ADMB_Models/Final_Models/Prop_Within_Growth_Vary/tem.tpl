@@ -1423,7 +1423,7 @@ INITIALIZATION_SECTION
   vector                rec_like_bias_adj(styr-nages+2,endyr_rec_est);  // bias ramp adjustment
   number                sigr;
 
-// Numbers at age and biomass
+  // Numbers at age and biomass
   matrix                natage_m(styr,endyr,1,nages);         // Matrix of numbers at age from start year to end year
   matrix                natage_f(styr,endyr,1,nages);         // Matrix of numbers at age from start year to end year
   matrix                num_len_m(styr,endyr,1,nlenbins);         // Matrix of numbers at length from start year to end year
@@ -1568,6 +1568,7 @@ INITIALIZATION_SECTION
 
 
  PROCEDURE_SECTION
+
   l=l+1; // Initiate counter for random seeds in projection
   
   switch (SrType) {
@@ -2585,7 +2586,7 @@ FUNCTION Get_Catch_at_Age
 FUNCTION Get_Dependent_Vars
   for (i=styr;i<=endyr;i++)
   {
-    pred_rec(i) = natage_f(i,1)+natage_m(i,1);                  // Setting up results based on estimated paramters
+    pred_rec(i) = log(natage_f(i,1)+natage_m(i,1));                  // Setting up results based on estimated paramters
     tot_biom(i) = weight_f(i) * natage_f(i)+weight_m(i)*natage_m(i);          // Total biomass results
     spawn_biom(i) = weight_maturity_prod_f(i)*natage_f(i) ;                     // Spawning biomass result
   }
@@ -2947,7 +2948,7 @@ FUNCTION compute_spr_rates
   sprpen    = 100.*square(SBF50/SB0-0.5);
   sprpen   += 100.*square(SBF40/SB0-0.4);
   sprpen   += 100.*square(SBF35/SB0-0.35);
-  B40       = 0.5*SBF40*mean(pred_rec(1979,endyr-recage));
+  B40       = 0.5*SBF40*mean(exp(pred_rec(1979,endyr-recage)));
   b40rat = spawn_biom / B40;
   
 FUNCTION Calc_priors
