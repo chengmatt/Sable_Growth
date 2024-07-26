@@ -162,3 +162,4 @@ for(r in 1:length(re_model)) {
 
 write.csv(growth_all, here(dir.out, "Growth_estimates.csv"))
 write.csv(sd_rep_all, here(dir.out, "SDRep_estimates.csv"))
+

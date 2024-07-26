@@ -17,7 +17,7 @@ age_dat = read.csv(here("data", "age_view.csv"), check.names = FALSE) %>%
 
 # Figure out number of age samples available
 n_age_samp = age_dat %>% 
-  group_by(Year) %>% 
+  group_by(Year, `Sex Description`) %>% 
   count()
 
 # Plot number of age samples 

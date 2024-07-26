@@ -77,7 +77,7 @@ laa_dat <- read.csv(here("data", "age_view.csv"), check.names = FALSE) %>%
          !Age %in% c(0, 1)) %>% 
   rename(Length = `Length (cm)`,
          Sex_name = `Sex Description`,
-         Weight = `Weight (g)`) %>% 
+         Weight = `Weight (g)`) %>% # should actually be kg?
   mutate(Age = ifelse(Age >= 31, 31, Age), # collapse ages to + group
          Year = Year - min(Year)) %>% 
   select(Length, Weight, Age, Year, Sex_name) %>% 
@@ -166,19 +166,31 @@ rec_df = rec_df %>% left_join(meanrec_df %>% rename(meanrec = coeff) %>% mutate(
 
 ## SSB, Rec, ABC plot ------------------------------------------------------
 
-ssb_plot = ggplot(ssb_df %>% filter(Year <= 2023), aes(x = Year, y = ssb, color = type,
-                                                       ymin = downr, ymax = upr, fill = type)) +
+ssb_plot = ggplot(ssb_df %>% filter(Year <= 2030) %>% 
+                    mutate(type = ifelse(type == "Growth Vary", "Assesmt_Vary", "Assesmt_SQ"),
+                           type = factor(type, levels = c("Assesmt_Vary", "Assesmt_SQ"))), 
+                    aes(x = Year, y = ssb, color = type, ymin = downr, ymax = upr, fill = type)) +
+  annotate("rect", xmin = 2024, xmax = Inf, ymin = -Inf, ymax = Inf, color = "grey", fill = "grey", alpha = 0.75) +
   geom_ribbon(alpha = 0.35, color = NA) +
   geom_line(aes(color = type), size = 1.3) +
   geom_hline(aes(yintercept = b40, color = type), lty = 2, size = 1.65) +
   theme_reg() +
   ylim(0, NA) +
-  theme(legend.position = c(0.88, 0.85)) +
+  theme(legend.position = c(0.15, 0.15)) +
   scale_color_manual(values = c("#0072B2", "#D55E00")) +
   scale_fill_manual(values = c("#0072B2", "#D55E00")) +
   labs(x = "Year", y = "Spawning Biomass (kt)", color = "Model", fill = "Model")
 
-rec_plot = ggplot(rec_df, aes(x = Year, y = rec, ymin = downr, ymax = upr, fill = type)) +
+# look at mean differences in projection periods
+ssb_df %>% 
+  filter(Year >= 2024, Year <= 2030) %>% 
+  group_by(type) %>% 
+  summarize(mean(ssb))
+
+rec_plot = ggplot(rec_df %>% 
+                    mutate(type = ifelse(type == "Growth Vary", "Assesmt_Vary", "Assesmt_SQ"),
+                           type = factor(type, levels = c("Assesmt_Vary", "Assesmt_SQ"))),
+                  aes(x = Year, y = rec, ymin = downr, ymax = upr, fill = type)) +
   geom_line(aes(color = type), size = 1.3) +
   geom_ribbon(alpha = 0.35) +
   geom_hline(aes(yintercept = meanrec, color = type), lty = 2, size = 1.65) +
@@ -189,12 +201,16 @@ rec_plot = ggplot(rec_df, aes(x = Year, y = rec, ymin = downr, ymax = upr, fill 
   ylim(0, NA) +
   labs(x = "Year", y = "Age-2 Recruitment (millions)", color = "Model", fill = "Model")
 
-abc_plot = ggplot(abc_df, aes(x = type, y = coeff, ymin = downr, ymax = upr, color = type)) +
+abc_plot = ggplot(abc_df %>% 
+                    mutate(type = ifelse(type == "Growth Vary", "Assesmt_Vary", "Assesmt_SQ"),
+                           type = factor(type, levels = c("Assesmt_Vary", "Assesmt_SQ"))),
+                  aes(x = type, y = coeff, ymin = downr, ymax = upr, color = type)) +
   geom_pointrange(position = position_dodge(width = 0.2), lwd = 1.3, fatten = 15) +
   labs(x = "Model", y = "Acceptable Biological Catch (ABC)", color = "Model") +
   theme_reg() +
   scale_color_manual(values = c("#0072B2", "#D55E00")) +
   scale_fill_manual(values = c("#0072B2", "#D55E00")) +
+  ylim(0, NA) +
   theme(legend.position = "none")
 
 pdf(here("figs", "ms_figs", "stock_status.pdf"), width = 10, height = 10)
@@ -289,7 +305,8 @@ waa_resids <- waa_ts %>%
   filter(peel == 0) %>% 
   rename(Pred = Mean) %>% 
   left_join(waa_dat %>% select(Year, Age, Sex, Mean) %>% rename(Obs = Mean), by = c("Sex", "Age", "Year")) %>% 
-  mutate(re_model = ifelse(re_model == "3dar1", "Growth Varying", "Constant Growth"))
+  mutate(re_model = ifelse(re_model == "3dar1", "Grwth_Vary", "Grwth_Constant"),
+         re_model = factor(re_model, levels = c("Grwth_Vary", "Grwth_Constant")))
 
 # Length-at-age residuals
 laa_dat_sub <- laa_dat %>% 
@@ -311,12 +328,12 @@ laa_3dar1_ts_sb <- laa_ts %>%
 # left join here constant model
 laa_const_resids <- laa_constant_ts_sb %>% 
     left_join(laa_dat_sub, by = c("Sex", "Age", "Year")) %>% 
-    mutate(Model = "Constant Growth")
+    mutate(Model = "Grwth_Constant")
 
 # left join 3dar1 model
 laa_3dar1_resids <- laa_3dar1_ts_sb %>% 
   left_join(laa_dat_sub, by = c("Sex", "Age", "Year")) %>% 
-  mutate(Model = "Growth Varying")
+  mutate(Model = "Grwth_Vary")
 
 # now rbind everything
 laa_resids <- rbind(laa_const_resids, laa_3dar1_resids)
@@ -333,14 +350,15 @@ laa_resids <- laa_resids %>%
   mutate(raw = Obs - Pred) %>% 
   group_by(Sex, Model) %>% 
   mutate(sd = sd(raw, na.rm = TRUE),
-         std_resid = raw / sd)
+         std_resid = raw / sd,
+         Model = factor(Model, levels = c("Grwth_Vary", "Grwth_Constant"))) 
 
 ### Plot all! ---------------------------------------------------------------
 
 # annual residuals
 waa_yr <- ggplot(waa_resids, aes(x = Year, y = std_resid)) +
   geom_point(alpha = 0.075) +
-  geom_smooth(aes(fill = re_model, color = re_model), size = 2, method = "gam") +
+  geom_smooth(aes(fill = re_model, color = re_model), size = 2, method = "loess") +
   geom_hline(yintercept = 0, lty = 2, size = 1) +
   facet_grid(re_model~Sex) +
   scale_color_manual(values = c("#0072B2", "#D55E00")) +
@@ -354,7 +372,7 @@ waa_yr <- ggplot(waa_resids, aes(x = Year, y = std_resid)) +
 # cohort residuals
 waa_cohort <- ggplot(waa_resids, aes(x = broodYear, y = std_resid)) +
   geom_point(alpha = 0.075) +
-  geom_smooth(aes(fill = re_model, color = re_model), size = 2, method = "gam") +
+  geom_smooth(aes(fill = re_model, color = re_model), size = 2, method = "loess") +
   geom_hline(yintercept = 0, lty = 2, size = 1) +
   facet_grid(re_model~Sex) +
   scale_x_continuous(breaks = seq(1965, 2020, 10)) +
@@ -368,7 +386,7 @@ waa_cohort <- ggplot(waa_resids, aes(x = broodYear, y = std_resid)) +
 # length year resids
 laa_yr <- ggplot(laa_resids, aes(x = Year, y = std_resid)) +
   geom_point(alpha = 0.008) +
-  geom_smooth(aes(fill = Model, color = Model), size = 2, method = "gam") +
+  geom_smooth(aes(fill = Model, color = Model), size = 2, method = "loess") +
   geom_hline(yintercept = 0, lty = 2, size = 1) +
   facet_grid(Model~Sex) +
   coord_cartesian(ylim = c(-4, 4)) +
@@ -383,7 +401,7 @@ laa_yr <- ggplot(laa_resids, aes(x = Year, y = std_resid)) +
 laa_cohort <- ggplot(laa_resids %>% mutate(broodYear = Year - Age), 
        aes(x = broodYear, y = std_resid)) +
   geom_point(alpha = 0.008) +
-  geom_smooth(aes(fill = Model, color = Model), size = 2, method = "gam") +
+  geom_smooth(aes(fill = Model, color = Model), size = 2, method = "loess") +
   geom_hline(yintercept = 0, lty = 2, size = 1) +
   facet_grid(Model~Sex) +
   coord_cartesian(ylim = c(-4, 4)) +
@@ -430,7 +448,7 @@ waa_plot <- ggplot() +
   facet_grid(Sex~broodYear, scale = "free") +
   scale_color_manual(values = c("#DC3220", "#005AB5")) +
   scale_fill_manual(values = c("#DC3220", "#005AB5")) +
-  labs(x = "Age", y = "Weight (g)", fill = "Sex", color = "Sex") +
+  labs(x = "Age", y = "Weight (kg)", fill = "Sex", color = "Sex") +
   theme_reg() +
   theme(legend.position = "none")
 
@@ -478,7 +496,7 @@ ggplot(waa_ts) +
   scale_color_colorblind7() +
   scale_fill_colorblind7() +
   theme_reg() +
-  labs(y = "Weight (g)", fill = "Ages", color = "Ages")
+  labs(y = "Weight (kg)", fill = "Ages", color = "Ages")
 
 laa_ts_plot <- 
   ggplot(laa_ts) +
@@ -520,7 +538,7 @@ waa_ts_plot <-
   scale_color_manual(values = c("#DC3220", "#005AB5")) +
   scale_fill_manual(values = c("#DC3220", "#005AB5")) +
   theme_reg() +
-  labs(y = "Weight (g)", fill = "Sex", color = "Sex") +
+  labs(y = "Weight (kg)", fill = "Sex", color = "Sex") +
   theme(legend.title = element_text(size = 23),
         legend.text = element_text(size = 20),
         axis.title = element_text(size = 23),
@@ -596,7 +614,7 @@ waa_rpn_plot <-
   scale_color_manual(values = c("#DC3220", "#005AB5")) +
   scale_fill_manual(values = c("#DC3220", "#005AB5")) +
   theme_reg() +
-  labs(x = "log(Survey RPN)", y = "log(Weight (g))")  +
+  labs(x = "log(Survey RPN)", y = "log(Weight (kg))")  +
   theme(legend.position = "none")
 
 # Lengths
@@ -662,7 +680,7 @@ f_waa_rpn_plot <-
   scale_color_manual(values = c("#DC3220")) +
   scale_fill_manual(values = c("#DC3220")) +
   theme_reg() +
-  labs(x = "log(Survey RPN)", y = "log(Weight (g))")  +
+  labs(x = "log(Survey RPN)", y = "log(Weight (kg))")  +
   theme(legend.position = "none")
 
 m_waa_rpn_plot <-
@@ -690,7 +708,7 @@ m_waa_rpn_plot <-
   scale_color_manual(values = c("#005AB5")) +
   scale_fill_manual(values = c("#005AB5")) +
   theme_reg() +
-  labs(x = "log(Survey RPN)", y = "log(Weight (g))")  +
+  labs(x = "log(Survey RPN)", y = "log(Weight (kg))")  +
   theme(legend.position = "none")
 
 pdf(here("figs", "ms_figs", "supp_rpn_waaF.pdf"), width = 12, height = 10)

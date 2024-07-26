@@ -45,7 +45,7 @@ pdf(here('figs', "ageing_error_matrix.pdf"), width = 10, height = 8)
 ggplot(ageage_mat, aes(x = factor(True_Age), y = factor(Assigned_Age), fill = Prob)) +
   geom_tile() +
   scale_fill_distiller(palette = "YlGnBu", direction = 1) +
-  labs(x = "True Ages", y = "Assigned Ages", fill = "Probability of Assignment") +
+  labs(x = "Reader Age", y = "Tester Age", fill = "Probability of Assignment") +
   theme_bw() +
   theme(legend.text = element_text(size = 15),
         legend.title = element_text(size = 20),

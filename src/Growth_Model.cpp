@@ -241,7 +241,7 @@ Type objective_function<Type>::operator() ()
  
  // 3dar1
  if(re_model == 3) jnLL += GMRF(Q_sparse)(ln_eps_at); 
-
+ 
   // REPORT SECTION 
   ADREPORT(mu_at);
   ADREPORT(mu_t);
