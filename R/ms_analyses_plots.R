@@ -422,14 +422,22 @@ dev.off()
 # create ages at which large recruitment events were observed
 waa_ts <- waa_ts %>% mutate(large_rec_age1 = (2014 - broodYear) + 2,
                            large_rec_age2 = (2016 - broodYear) + 2,
+                           large_rec_age3 = (2017 - broodYear) + 2,
+                           large_rec_age4 = (2019 - broodYear) + 2,
                            large_rec_age1 = ifelse(large_rec_age1 <= 1, NA, large_rec_age1),
-                           large_rec_age2 = ifelse(large_rec_age2 <= 1, NA, large_rec_age2))
+                           large_rec_age2 = ifelse(large_rec_age2 <= 1, NA, large_rec_age2),
+                           large_rec_age3 = ifelse(large_rec_age3 <= 1, NA, large_rec_age3),
+                           large_rec_age4 = ifelse(large_rec_age4 <= 1, NA, large_rec_age4))
 
 # create ages at which large recruitment events were observed
 laa_ts <- laa_ts %>% mutate(large_rec_age1 = (2014 - broodYear) + 2,
-                           large_rec_age2 = (2016 - broodYear) + 2,
-                           large_rec_age1 = ifelse(large_rec_age1 <= 1, NA, large_rec_age1),
-                           large_rec_age2 = ifelse(large_rec_age2 <= 1, NA, large_rec_age2))
+                            large_rec_age2 = (2016 - broodYear) + 2,
+                            large_rec_age3 = (2017 - broodYear) + 2,
+                            large_rec_age4 = (2019 - broodYear) + 2,
+                            large_rec_age1 = ifelse(large_rec_age1 <= 1, NA, large_rec_age1),
+                            large_rec_age2 = ifelse(large_rec_age2 <= 1, NA, large_rec_age2),
+                            large_rec_age3 = ifelse(large_rec_age3 <= 1, NA, large_rec_age3),
+                            large_rec_age4 = ifelse(large_rec_age4 <= 1, NA, large_rec_age4))
 
 waa_plot <- ggplot() +
   geom_line(waa_ts %>% filter(broodYear %in% seq(2010,2016,1), Year != 2023, peel == 0, re_model == "3dar1"),
@@ -444,6 +452,10 @@ waa_plot <- ggplot() +
              mapping = aes(xintercept = large_rec_age1), size = 0.75) +
   geom_vline(waa_ts %>% filter(broodYear %in% seq(2010,2016,1), Year != 2023, peel == 0, re_model == "constant"), 
              mapping = aes(xintercept = large_rec_age2), lty = 2, size = 0.75) +
+  geom_vline(waa_ts %>% filter(broodYear %in% seq(2010,2016,1), Year != 2023, peel == 0, re_model == "constant"), 
+             mapping = aes(xintercept = large_rec_age3), size = 0.75, lty = 4) +
+  geom_vline(waa_ts %>% filter(broodYear %in% seq(2010,2016,1), Year != 2023, peel == 0, re_model == "constant"), 
+             mapping = aes(xintercept = large_rec_age4), lty = 3, size = 0.75) +
   scale_x_continuous(breaks = integer_breaks()) +
   facet_grid(Sex~broodYear, scale = "free") +
   scale_color_manual(values = c("#DC3220", "#005AB5")) +
@@ -465,6 +477,10 @@ laa_plot <- ggplot() +
               mapping = aes(x = Age, y = Mean, ymin = lwr_95, ymax = upr_95), alpha = 0.3) +
   geom_vline(laa_ts %>% filter(broodYear %in% seq(2010,2016,1), Year != 2023, peel == 0, re_model == "constant"), 
              mapping = aes(xintercept = large_rec_age2), lty = 2, size = 0.75) +
+  geom_vline(laa_ts %>% filter(broodYear %in% seq(2010,2016,1), Year != 2023, peel == 0, re_model == "constant"), 
+             mapping = aes(xintercept = large_rec_age3), size = 0.75, lty = 4) +
+  geom_vline(laa_ts %>% filter(broodYear %in% seq(2010,2016,1), Year != 2023, peel == 0, re_model == "constant"), 
+             mapping = aes(xintercept = large_rec_age4), lty = 3, size = 0.75) +
   scale_x_continuous(breaks = integer_breaks()) +
   facet_grid(Sex~broodYear, scale = "free") +
   scale_color_manual(values = c("#DC3220", "#005AB5")) +
