@@ -4,3 +4,5 @@
 .Ruserdata
 *.csv
 *.RData
+/ADMB_Models/Exploratory_Models_v2
+/ADMB_Models/Exploratory_Models_v1
