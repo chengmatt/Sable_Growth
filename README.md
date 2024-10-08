@@ -2,7 +2,7 @@
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.13903201.svg)](https://doi.org/10.5281/zenodo.13903201)
 <!-- badges: end -->
 
-# Slim pickings?: Extreme recruitment events may confer density-dependent declines in growth for Alaska sablefish (Anoplopoma fimbria) with implications for stock assessment, Canadian Journal of Fisheries and Aquatic Sciences
+# Slim pickings?: Extreme recruitment events may confer density-dependent declines in growth for Alaska sablefish (Anoplopoma fimbria) with implications for stock assessment
 ## Authors: Matthew LH. Cheng, Daniel R. Goethel, Peter-John F. Hulson, Katy B. Echave, Curry J. Cunningham
 ### Contact (lhcheng@alaska.edu)
 ## Abstract
